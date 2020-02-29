@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
-	"image/color"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 
+	"github.com/TFK1410/go-rpi-fftwave/drawloops"
 	"github.com/TFK1410/go-rpi-fftwave/soundbuffer"
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
@@ -38,7 +38,7 @@ func main() {
 
 	//Setup a waitGroup and buffers for the goroutines
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	sb := make(chan *soundbuffer.SoundBuffer)
 
 	var ss SoundSync
@@ -54,7 +54,10 @@ func main() {
 	//Setup FFT thread
 	fftQuit := make(chan bool)
 	ss.quit = fftQuit
-	go initFFT(1<<chunkPower, ss)
+	fftOutChan := make(chan []float64)
+	go initFFT(1<<chunkPower, fftOutChan, ss)
+
+	drawloops.InitWaves(minVal, maxVal)
 
 	config := &rgbmatrix.DefaultConfig
 	config.Rows = *rows
@@ -73,18 +76,22 @@ func main() {
 	c := rgbmatrix.NewCanvas(m)
 	defer c.Close()
 
-	bounds := c.Bounds()
+	//Setup FFT smoothing thread
+	fftSmmothQuit := make(chan bool)
+	go initFFTSmooth(c, fftOutChan, &wg, fftSmmothQuit)
 
-	go func() {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-				//fmt.Println("x", x, "y", y)
+	// bounds := c.Bounds()
 
-				c.Set(x, y, color.RGBA{255, 0, 0, 255})
-			}
-			c.Render()
-		}
-	}()
+	// go func() {
+	// 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
+	// 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+	// 			//fmt.Println("x", x, "y", y)
+
+	// 			c.Set(x, y, color.RGBA{255, 0, 0, 255})
+	// 		}
+	// 		c.Render()
+	// 	}
+	// }()
 
 	for {
 		select {
@@ -92,6 +99,7 @@ func main() {
 			log.Println("CLOSING")
 			recQuit <- true
 			fftQuit <- true
+			fftSmmothQuit <- true
 			ss.wg.Wait()
 			log.Println("DONE")
 			return

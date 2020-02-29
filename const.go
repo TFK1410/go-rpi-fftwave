@@ -5,6 +5,9 @@ const (
 	chunkPower    = 13
 	fftUpdateRate = 100
 
+	targetRefreshRate = 120
+	fftSmoothCurve    = 0.75
+
 	minHz  = 36
 	maxHz  = 20000
 	minVal = 110

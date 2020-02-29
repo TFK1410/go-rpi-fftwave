@@ -12,7 +12,7 @@ import (
 //initFFT function is a start for the goroutine handling the FFT part of the application.
 //bfz is the number of elements in a single FFT call.
 //Should be the same as the ring buffer size.
-func initFFT(bfz int, ss SoundSync) error {
+func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 	defer ss.wg.Done()
 	// start := time.Now()
 
@@ -55,6 +55,11 @@ func initFFT(bfz int, ss SoundSync) error {
 		}
 
 		fftToBins(fftBins, realData, outFFT)
+
+		select {
+		case fftOutChan <- outFFT:
+		default:
+		}
 
 		// elapsed = time.Since(start)
 		// log.Printf("Execution time: %v\n", elapsed)
