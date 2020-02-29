@@ -24,19 +24,37 @@ var (
 	disableHardwarePulsing = flag.Bool("led-no-hardware-pulse", false, "Don't use hardware pin-pulse generation.")
 )
 
+//SoundSync struct contains variables used for the synchronization of the recording and FFT threads
+type SoundSync struct {
+	sb   chan *soundbuffer.SoundBuffer
+	wg   *sync.WaitGroup
+	quit <-chan bool
+}
+
 func main() {
 	//Take over kill signals
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, os.Kill)
 
-	//Setup a waitGroup for the goroutines
+	//Setup a waitGroup and buffers for the goroutines
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
+	sb := make(chan *soundbuffer.SoundBuffer)
+
+	var ss SoundSync
+	ss.sb = sb
+	ss.wg = &wg
 
 	//Setup recording buffer and start the goroutine
-	recQuit := make(chan bool)
 	r, _ := soundbuffer.NewBuffer(1 << chunkPower)
-	go initRecord(r, sampleRate/fftUpdateRate, &wg, recQuit)
+	recQuit := make(chan bool)
+	ss.quit = recQuit
+	go initRecord(r, sampleRate/fftUpdateRate, ss)
+
+	//Setup FFT thread
+	fftQuit := make(chan bool)
+	ss.quit = fftQuit
+	go initFFT(1<<chunkPower, ss)
 
 	config := &rgbmatrix.DefaultConfig
 	config.Rows = *rows
@@ -73,7 +91,8 @@ func main() {
 		case <-quit:
 			log.Println("CLOSING")
 			recQuit <- true
-			wg.Wait()
+			fftQuit <- true
+			ss.wg.Wait()
 			log.Println("DONE")
 			return
 		}

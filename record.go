@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/TFK1410/go-rpi-fftwave/soundbuffer"
@@ -13,8 +12,8 @@ import (
 	"github.com/gordonklaus/portaudio"
 )
 
-func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, wg *sync.WaitGroup, quit <-chan bool) error {
-	defer wg.Done()
+func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, ss SoundSync) error {
+	defer ss.wg.Done()
 
 	log.Println("Setting up signal handling for recording")
 	record := make(chan os.Signal, 1)
@@ -47,7 +46,7 @@ func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, wg *sync.WaitGr
 		r.Write(in)
 
 		select {
-		case <-quit:
+		case <-ss.quit:
 			log.Println("Stopping audio stream")
 			err := stream.Stop()
 			if err != nil {
@@ -57,6 +56,7 @@ func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, wg *sync.WaitGr
 		case <-record:
 			//Calling record in a separate goroutine so that the PA buffer doesn't get overflown
 			go saveRecording(r.Sound())
+		case ss.sb <- r:
 		default:
 		}
 	}
