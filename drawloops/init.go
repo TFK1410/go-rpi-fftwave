@@ -1,19 +1,18 @@
 package drawloops
 
-import "fmt"
+import (
+	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
+)
 
-//LedOutData ...
-type LedOutData struct {
-	colBarriers        []float64
-	dataHeight         int
-	whiteDotHeightStep float64
+type wave interface {
+	InitWave(minVal, maxVal float64)
+	Draw(*rgbmatrix.Canvas, []float64, []float64)
 }
 
-var basicWave LedOutData
+//BasicWave ...
+var BasicWave MirrorWave
 
 //InitWaves ...
-func InitWaves(minVal, maxVal float64) {
-	basicWave.colBarriers = calculateBarriers(64, minVal, maxVal)
-	fmt.Println(basicWave.colBarriers)
-	basicWave.dataHeight = 64
+func InitWaves(dataWidth int, minVal, maxVal float64) {
+	BasicWave.InitWave(dataWidth, minVal, maxVal)
 }

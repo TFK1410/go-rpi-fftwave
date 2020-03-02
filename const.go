@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 const (
 	sampleRate    = 44100
 	chunkPower    = 13
@@ -15,4 +17,11 @@ const (
 
 	//TODO get rid of the hardcoded screen data width
 	dataWidth = 64
+
+	whiteDotHangTime  = time.Duration(500 * time.Millisecond)
+	whiteDotDropSpeed = 25
+
+	soundEnergyHistoryCount = 128
+	soundEnergyMin          = 700
+	soundEnergyMax          = 1000
 )

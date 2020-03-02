@@ -17,7 +17,7 @@ var (
 	cols                   = flag.Int("led-cols", 64, "number of columns supported")
 	parallel               = flag.Int("led-parallel", 1, "number of daisy-chained panels")
 	chain                  = flag.Int("led-chain", 4, "number of displays daisy-chained")
-	brightness             = flag.Int("brightness", 100, "brightness (0-100)")
+	brightness             = flag.Int("brightness", 30, "brightness (0-100)")
 	hardwareMapping        = flag.String("led-gpio-mapping", "regular", "Name of GPIO mapping used.")
 	showRefresh            = flag.Bool("led-show-refresh", false, "Show refresh rate.")
 	inverseColors          = flag.Bool("led-inverse", false, "Switch if your matrix has inverse colors on.")
@@ -57,7 +57,7 @@ func main() {
 	fftOutChan := make(chan []float64)
 	go initFFT(1<<chunkPower, fftOutChan, ss)
 
-	drawloops.InitWaves(minVal, maxVal)
+	drawloops.InitWaves(dataWidth, minVal, maxVal)
 
 	config := &rgbmatrix.DefaultConfig
 	config.Rows = *rows
@@ -79,19 +79,6 @@ func main() {
 	//Setup FFT smoothing thread
 	fftSmmothQuit := make(chan bool)
 	go initFFTSmooth(c, fftOutChan, &wg, fftSmmothQuit)
-
-	// bounds := c.Bounds()
-
-	// go func() {
-	// 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-	// 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-	// 			//fmt.Println("x", x, "y", y)
-
-	// 			c.Set(x, y, color.RGBA{255, 0, 0, 255})
-	// 		}
-	// 		c.Render()
-	// 	}
-	// }()
 
 	for {
 		select {
