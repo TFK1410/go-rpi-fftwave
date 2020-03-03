@@ -22,6 +22,6 @@ const (
 	whiteDotDropSpeed = 25
 
 	soundEnergyHistoryCount = 128
-	soundEnergyMin          = 700
+	soundEnergyMin          = 900
 	soundEnergyMax          = 1000
 )

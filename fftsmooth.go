@@ -54,7 +54,7 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 		soundEnergyHistory[0] = math.Sqrt(soundEnergy)
 		//fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergyHistory[0])
 
-		drawloops.BasicWave.Draw(c, smoothFFT, dotsValue)
+		drawloops.BasicWave.Draw(c, smoothFFT, dotsValue, soundEnergyHistory)
 	}
 }
 

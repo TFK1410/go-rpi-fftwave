@@ -40,16 +40,16 @@ func calculateBarriers(height int, minVal, maxVal float64) []float64 {
 	return space
 }
 
-func calculateDistance(width, height int, centerX, centerY float64) [][]float64 {
+func calculateDistance(width, height int, centerX, centerY float64) [][]int {
 	var xx, yy, dist float64
-	out := make([][]float64, width)
+	out := make([][]int, width)
 	for x := 0; x < width; x++ {
-		out[x] = make([]float64, height)
+		out[x] = make([]int, height)
 		for y := 0; y < height; y++ {
 			xx = math.Abs(float64(x) - centerX)
-			yy = math.Abs(float64(y) - centerX)
+			yy = math.Abs(float64(y) - centerY)
 			dist = math.Round(math.Hypot(xx, yy))
-			out[x][y] = dist
+			out[x][y] = int(dist)
 		}
 	}
 	return out
