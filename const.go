@@ -24,4 +24,9 @@ const (
 	soundEnergyHistoryCount = 128
 	soundEnergyMin          = 900
 	soundEnergyMax          = 1000
+
+	dtPin     = 16
+	clkPin    = 20
+	swPin     = 12
+	longPress = time.Duration(2 * time.Second)
 )

@@ -38,7 +38,7 @@ func main() {
 
 	//Setup a waitGroup and buffers for the goroutines
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(4)
 	sb := make(chan *soundbuffer.SoundBuffer)
 
 	var ss SoundSync
@@ -80,6 +80,10 @@ func main() {
 	fftSmmothQuit := make(chan bool)
 	go initFFTSmooth(c, fftOutChan, &wg, fftSmmothQuit)
 
+	//Start encoder thread
+	encoderQuit := make(chan bool)
+	go initEncoder(dtPin, clkPin, swPin, &wg, encoderQuit)
+
 	for {
 		select {
 		case <-quit:
@@ -87,6 +91,7 @@ func main() {
 			recQuit <- true
 			fftQuit <- true
 			fftSmmothQuit <- true
+			encoderQuit <- true
 			ss.wg.Wait()
 			log.Println("DONE")
 			return

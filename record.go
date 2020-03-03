@@ -41,7 +41,12 @@ func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, ss SoundSync) e
 	for {
 		err = stream.Read()
 		if err != nil {
-			log.Fatalf("Error reading from the stream: %v", err)
+			if err.Error() == "Input overflowed" {
+				log.Println("Recording input overflown. Continuing...")
+				continue
+			} else {
+				log.Fatalf("Error reading from the stream: %v", err)
+			}
 		}
 		r.Write(in)
 
