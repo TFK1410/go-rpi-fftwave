@@ -24,11 +24,13 @@ var (
 	disableHardwarePulsing = flag.Bool("led-no-hardware-pulse", false, "Don't use hardware pin-pulse generation.")
 )
 
+const threadCount = 4
+
 //SoundSync struct contains variables used for the synchronization of the recording and FFT threads
 type SoundSync struct {
 	sb   chan *soundbuffer.SoundBuffer
 	wg   *sync.WaitGroup
-	quit <-chan bool
+	quit <-chan struct{}
 }
 
 func main() {
@@ -36,24 +38,26 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, os.Kill)
 
-	//Setup a waitGroup and buffers for the goroutines
+	//Setup a waitGroup and quit channels for the goroutines
+	var quits [threadCount]chan struct{}
+	for i := range quits {
+		quits[i] = make(chan struct{})
+	}
 	var wg sync.WaitGroup
-	wg.Add(4)
-	sb := make(chan *soundbuffer.SoundBuffer)
+	wg.Add(threadCount)
 
 	var ss SoundSync
+	sb := make(chan *soundbuffer.SoundBuffer)
 	ss.sb = sb
 	ss.wg = &wg
 
 	//Setup recording buffer and start the goroutine
 	r, _ := soundbuffer.NewBuffer(1 << chunkPower)
-	recQuit := make(chan bool)
-	ss.quit = recQuit
+	ss.quit = quits[0]
 	go initRecord(r, sampleRate/fftUpdateRate, ss)
 
 	//Setup FFT thread
-	fftQuit := make(chan bool)
-	ss.quit = fftQuit
+	ss.quit = quits[1]
 	fftOutChan := make(chan []float64)
 	go initFFT(1<<chunkPower, fftOutChan, ss)
 
@@ -77,21 +81,20 @@ func main() {
 	defer c.Close()
 
 	//Setup FFT smoothing thread
-	fftSmmothQuit := make(chan bool)
-	go initFFTSmooth(c, fftOutChan, &wg, fftSmmothQuit)
+	go initFFTSmooth(c, fftOutChan, &wg, quits[2])
 
 	//Start encoder thread
-	encoderQuit := make(chan bool)
-	go initEncoder(dtPin, clkPin, swPin, &wg, encoderQuit)
+	go initEncoder(dtPin, clkPin, swPin, &wg, quits[3])
 
 	for {
 		select {
 		case <-quit:
-			log.Println("CLOSING")
-			recQuit <- true
-			fftQuit <- true
-			fftSmmothQuit <- true
-			encoderQuit <- true
+			log.Println("Terminating goroutines")
+
+			for i := range quits {
+				close(quits[i])
+			}
+
 			ss.wg.Wait()
 			log.Println("DONE")
 			return

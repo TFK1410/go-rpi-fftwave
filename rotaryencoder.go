@@ -23,7 +23,7 @@ var (
 	pressTimer        time.Time
 )
 
-func initEncoder(DTpin, CLKpin, SWpin int, wg *sync.WaitGroup, quit <-chan bool) {
+func initEncoder(DTpin, CLKpin, SWpin int, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 	embd.InitGPIO()
 	defer embd.CloseGPIO()
@@ -56,7 +56,7 @@ func initEncoder(DTpin, CLKpin, SWpin int, wg *sync.WaitGroup, quit <-chan bool)
 
 	select {
 	case <-quit:
-		log.Println("Stopping Encoder thread")
+		log.Println("Stopping encoder thread")
 		return
 	}
 }
