@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image/color"
 	"log"
 	"math"
 	"sync"
@@ -29,8 +30,10 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 	var start time.Time
 	var elapsed time.Duration
 
-	soundEnergyHistory := make([]float64, soundEnergyHistoryCount)
+	// soundEnergyHistory := make([]float64, soundEnergyHistoryCount)
+	soundEnergyColors := make([]color.RGBA, soundEnergyHistoryCount)
 	var soundEnergy float64
+	var soundEnergyTimer time.Duration
 
 	for {
 		select {
@@ -48,15 +51,18 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 			soundEnergy += math.Pow(smoothFFT[i], 2)
 		}
 
-		copy(soundEnergyHistory[1:], soundEnergyHistory[0:len(soundEnergyHistory)-2])
-		soundEnergyHistory[0] = math.Sqrt(soundEnergy)
-
 		elapsed = time.Since(start)
-		whiteDotCalc(dotsValue, dotsTimeLeft, smoothFFT, elapsed)
 		start = time.Now()
 
-		drawloops.BasicWave.Draw(c, smoothFFT, dotsValue, soundEnergyHistory)
-		//fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergyHistory[0])
+		soundEnergy = math.Sqrt(soundEnergy)
+		copy(soundEnergyColors[1:], soundEnergyColors[0:len(soundEnergyColors)-2])
+
+		soundEnergyColors[0] = soundHue(&soundEnergyTimer, elapsed, soundEnergy)
+
+		whiteDotCalc(dotsValue, dotsTimeLeft, smoothFFT, elapsed)
+
+		drawloops.BasicWave.Draw(c, smoothFFT, dotsValue, soundEnergyColors)
+		//fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergy[0])
 	}
 }
 
@@ -74,4 +80,74 @@ func whiteDotCalc(dotsValue []float64, dotsTimeLeft []time.Duration, fft []float
 			}
 		}
 	}
+}
+
+func soundHue(timer *time.Duration, elapsed time.Duration, soundEnergy float64) color.RGBA {
+	var H, S, V float64
+	if *timer += elapsed; *timer > soundEnergyHueTime {
+		*timer = 0
+	}
+
+	H = timer.Seconds() / soundEnergyHueTime.Seconds()
+	S = float64(soundEnergySaturation / 100)
+	V = (soundEnergy - soundEnergyMin) / (soundEnergyMax - soundEnergyMin)
+
+	if V < 0 {
+		V = 0
+	} else if V > 1 {
+		V = 1
+	}
+
+	return hsv2RGB(H, S, V)
+
+}
+
+//H S V parameters are all between 0 and 1
+func hsv2RGB(H, S, V float64) color.RGBA {
+	var r, g, b float64
+	if S == 0 {
+		r = V * 255
+		g = V * 255
+		b = V * 255
+	} else {
+		h := H * 6
+		if h == 6 {
+			h = 0
+		}
+		i := math.Floor(h)
+		v1 := V * (1 - S)
+		v2 := V * (1 - S*(h-i))
+		v3 := V * (1 - S*(1-(h-i)))
+
+		if i == 0 {
+			r = V
+			g = v3
+			b = v1
+		} else if i == 1 {
+			r = v2
+			g = V
+			b = v1
+		} else if i == 2 {
+			r = v1
+			g = V
+			b = v3
+		} else if i == 3 {
+			r = v1
+			g = v2
+			b = V
+		} else if i == 4 {
+			r = v3
+			g = v1
+			b = V
+		} else {
+			r = V
+			g = v1
+			b = v2
+		}
+		r = r * 255 //RGB results from 0 to 255
+		g = g * 255
+		b = b * 255
+	}
+	out := color.RGBA{uint8(r), uint8(g), uint8(b), 0xff}
+	return out
 }

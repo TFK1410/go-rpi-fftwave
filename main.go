@@ -61,7 +61,7 @@ func main() {
 	fftOutChan := make(chan []float64)
 	go initFFT(1<<chunkPower, fftOutChan, ss)
 
-	drawloops.InitWaves(dataWidth, minVal, maxVal, soundEnergyMin, soundEnergyMax)
+	drawloops.InitWaves(dataWidth, minVal, maxVal)
 
 	config := &rgbmatrix.DefaultConfig
 	config.Rows = *rows

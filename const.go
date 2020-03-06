@@ -23,7 +23,9 @@ const (
 
 	soundEnergyHistoryCount = 128
 	soundEnergyMin          = 900
-	soundEnergyMax          = 1000
+	soundEnergyMax          = 1750
+	soundEnergySaturation   = 100
+	soundEnergyHueTime      = time.Duration(10 * time.Second)
 
 	dtPin     = 16
 	clkPin    = 20
