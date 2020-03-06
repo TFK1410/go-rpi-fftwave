@@ -84,7 +84,8 @@ func main() {
 	go initFFTSmooth(c, fftOutChan, &wg, quits[2])
 
 	//Start encoder thread
-	go initEncoder(dtPin, clkPin, swPin, &wg, quits[3])
+	encMessage := make(chan EncoderMessage)
+	go initEncoder(dtPin, clkPin, swPin, encMessage, &wg, quits[3])
 
 	for {
 		select {
@@ -96,8 +97,22 @@ func main() {
 			}
 
 			ss.wg.Wait()
+			close(encMessage)
 			log.Println("DONE")
 			return
+		case msg := <-encMessage:
+			switch msg {
+			case BrightnessUp:
+				if bright := m.GetBrightness(); bright < 100 {
+					m.SetBrightness(bright + 1)
+				}
+			case BrightnessDown:
+				if bright := m.GetBrightness(); bright > 0 {
+					m.SetBrightness(bright - 1)
+				}
+			case ButtonPress:
+			case LongPress:
+			}
 		}
 	}
 }

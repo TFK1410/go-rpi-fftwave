@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -18,15 +17,27 @@ var (
 	lastRoBStatus     int
 	currentRoSWStatus int
 	lastRoSWStatus    int
-	encoderPush       int
-	encoderState      int
 	pressTimer        time.Time
+	encoderChannel    chan<- EncoderMessage
 )
 
-func initEncoder(DTpin, CLKpin, SWpin int, wg *sync.WaitGroup, quit <-chan struct{}) {
+// EncoderMessage defines the kinds of messages that can originate from encoder actions
+type EncoderMessage int
+
+// Definition of message types
+const (
+	BrightnessUp EncoderMessage = iota
+	BrightnessDown
+	ButtonPress
+	LongPress
+)
+
+func initEncoder(DTpin, CLKpin, SWpin int, messages chan<- EncoderMessage, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 	embd.InitGPIO()
 	defer embd.CloseGPIO()
+
+	encoderChannel = messages
 
 	var err error
 
@@ -64,14 +75,12 @@ func initEncoder(DTpin, CLKpin, SWpin int, wg *sync.WaitGroup, quit <-chan struc
 func callClear(pin embd.DigitalPin) {
 	currentRoSWStatus, _ = pin.Read()
 	if currentRoSWStatus == 0 && lastRoSWStatus == 1 {
-		encoderPush = 1
-		fmt.Println("Pushed encoder")
 		pressTimer = time.Now()
 	} else if currentRoSWStatus == 1 && lastRoSWStatus == 0 {
-		encoderPush = 0
-		fmt.Println("Let go of encoder")
 		if time.Since(pressTimer) > longPress {
-			fmt.Println("Long pressed")
+			sendMessage(LongPress, encoderChannel)
+		} else {
+			sendMessage(ButtonPress, encoderChannel)
 		}
 	}
 	lastRoSWStatus = currentRoSWStatus
@@ -85,15 +94,13 @@ func callDeal(pin embd.DigitalPin) {
 	}
 
 	if lastRoBStatus == 0 && currentRoBStatus == 1 {
-		encoderState++
+		sendMessage(BrightnessUp, encoderChannel)
 	} else if lastRoBStatus == 1 && currentRoBStatus == 0 {
-		encoderState--
+		sendMessage(BrightnessDown, encoderChannel)
 	}
-
-	fmt.Println("Rotated encoder:", encoderState)
 }
 
-func nonBlockingChannelSend(msg int, c chan<- int) {
+func sendMessage(msg EncoderMessage, c chan<- EncoderMessage) {
 	select {
 	case c <- msg:
 		//message sent
