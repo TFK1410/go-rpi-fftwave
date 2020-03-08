@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image/color"
 	"log"
 	"os"
 	"os/signal"
@@ -67,6 +68,11 @@ func main() {
 	encMessage := make(chan EncoderMessage)
 	quits = addThread(&wg, quits)
 	go initEncoder(cfg.Encoder.DTPin, cfg.Encoder.CLKPin, cfg.Encoder.SWPin, cfg.Encoder.LongPressTime, encMessage, &wg, quits[len(quits)-1])
+
+	//Start DMX reader thread
+	var clr color.RGBA
+	quits = addThread(&wg, quits)
+	go initDMX(cfg.DMX.SlaveAddress, &clr, &wg, quits[len(quits)-1])
 
 	for {
 		select {

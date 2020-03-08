@@ -38,3 +38,5 @@ encoderConfig:
   swPin: 12
   longPressTime: 2
 dmxConfig:
+  slaveAddress: 0x04
+  

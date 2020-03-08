@@ -59,6 +59,7 @@ type encoderConfig struct {
 }
 
 type dmxConfig struct {
+	SlaveAddress byte `yaml:"slaveAddress,omitempty"`
 }
 
 // Configuration is a struct holding the config of the application
@@ -121,7 +122,9 @@ var cfg Configuration = Configuration{
 		SWPin:         12,
 		LongPressTime: 2,
 	},
-	DMX: dmxConfig{},
+	DMX: dmxConfig{
+		SlaveAddress: 0x04,
+	},
 }
 
 func loadConfig(cfg *Configuration) error {
@@ -138,7 +141,6 @@ func loadConfig(cfg *Configuration) error {
 	}
 
 	createMatrixConfig(cfg)
-	fmt.Println(cfg)
 
 	return nil
 }

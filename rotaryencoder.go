@@ -35,13 +35,14 @@ const (
 
 func initEncoder(DTpin, CLKpin, SWpin int, pressTime float64, messages chan<- EncoderMessage, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
-	embd.InitGPIO()
+	err := embd.InitGPIO()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	defer embd.CloseGPIO()
 
 	encoderChannel = messages
 	longPressTime = time.Duration(pressTime * float64(time.Second))
-
-	var err error
 
 	roAPin, err = embd.NewDigitalPin(DTpin)
 	if err != nil {
