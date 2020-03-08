@@ -6,8 +6,8 @@ import (
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
-//MirrorWave ...
-type MirrorWave struct {
+//QuadWave ...
+type QuadWave struct {
 	dataHeight    int
 	dataWidth     int
 	colBarriers   []float64
@@ -16,16 +16,16 @@ type MirrorWave struct {
 }
 
 //InitWave ...
-func (m *MirrorWave) InitWave(dataWidth int, minVal, maxVal float64) {
+func (m *QuadWave) InitWave(dataWidth int, minVal, maxVal float64) {
 	m.dataWidth = dataWidth
-	m.dataHeight = 64
+	m.dataHeight = 32
 	m.colBarriers = calculateBarriers(m.dataHeight, minVal, maxVal)
 	m.heightColors = colorGradient(color.RGBA{0, 255, 0, 255}, color.RGBA{255, 0, 0, 255}, m.dataHeight)
-	m.radiusIndexes = calculateDistance(m.dataWidth, m.dataHeight, -0.5, float64(m.dataHeight+1)/2)
+	m.radiusIndexes = calculateDistance(m.dataWidth, m.dataHeight, -0.5, float64(m.dataHeight)+0.5)
 }
 
 //Draw ...
-func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, dmxColor color.RGBA, data, dots []float64, soundEnergyHistory []color.RGBA) {
+func (m *QuadWave) Draw(c *rgbmatrix.Canvas, dmxColor color.RGBA, data, dots []float64, soundEnergyHistory []color.RGBA) {
 	bounds := c.Bounds()
 	for x, val := range data {
 		for y, bar := range m.colBarriers {
@@ -47,12 +47,9 @@ func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, dmxColor color.RGBA, data, dots [
 	}
 }
 
-func (m *MirrorWave) drawPixels(c *rgbmatrix.Canvas, x, y, maxX int, clr color.RGBA) {
-	if y < len(m.colBarriers)/2 {
-		c.Set((maxX+1)/4-1-x, y, clr)
-		c.Set((maxX+1)/4+x, y, clr)
-	} else {
-		c.Set((maxX+1)/4*3-1-x, y-len(m.colBarriers)/2, clr)
-		c.Set((maxX+1)/4*3+x, y-len(m.colBarriers)/2, clr)
-	}
+func (m *QuadWave) drawPixels(c *rgbmatrix.Canvas, x, y, maxX int, clr color.RGBA) {
+	c.Set(m.dataWidth-1-x, y, clr)
+	c.Set(m.dataWidth+x, y, clr)
+	c.Set(3*m.dataWidth-1-x, m.dataHeight-1-y, clr)
+	c.Set(3*m.dataWidth+x, m.dataHeight-1-y, clr)
 }

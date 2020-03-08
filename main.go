@@ -62,8 +62,10 @@ func main() {
 
 	//Setup FFT smoothing thread
 	var dmxColor color.RGBA
+	waveChan := make(chan drawloops.Wave)
 	quits = addThread(&wg, quits)
-	go initFFTSmooth(c, fftOutChan, &dmxColor, &wg, quits[len(quits)-1])
+	go initFFTSmooth(c, waveChan, fftOutChan, &dmxColor, &wg, quits[len(quits)-1])
+	waveChan <- drawloops.GetFirstWave()
 
 	//Start encoder thread
 	encMessage := make(chan EncoderMessage)
@@ -87,6 +89,7 @@ func main() {
 					m.SetBrightness(bright - 1)
 				}
 			case ButtonPress:
+				waveChan <- drawloops.GetNextWave()
 			case LongPress:
 				if dmxColor.A > 0 {
 					dmxColor.A = 0
@@ -103,6 +106,7 @@ func main() {
 
 			ss.wg.Wait()
 			close(encMessage)
+			close(waveChan)
 			log.Println("DONE")
 			return
 		}

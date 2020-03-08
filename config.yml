@@ -25,7 +25,7 @@ displayConfig:
   maxVal: 155
 whiteDotConfig:
   hangTime: 0.5
-  dropSpeed: 25
+  dropSpeed: 40
 soundEnergyConfig:
   historyCount: 128
   min: 900

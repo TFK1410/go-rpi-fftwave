@@ -6,15 +6,35 @@ import (
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
-type wave interface {
+//Wave ...
+type Wave interface {
 	InitWave(int, float64, float64)
 	Draw(*rgbmatrix.Canvas, color.RGBA, []float64, []float64, []color.RGBA)
 }
 
-//BasicWave ...
-var BasicWave MirrorWave
+var iterator int
+var waves []Wave
 
 //InitWaves ...
 func InitWaves(dataWidth int, minVal, maxVal float64) {
-	BasicWave.InitWave(dataWidth, minVal, maxVal)
+	waves = append(waves, &MirrorWave{})
+	waves = append(waves, &QuadWave{})
+
+	for i := range waves {
+		waves[i].InitWave(dataWidth, minVal, maxVal)
+	}
+}
+
+//GetFirstWave ...
+func GetFirstWave() Wave {
+	return waves[0]
+}
+
+//GetNextWave ...
+func GetNextWave() Wave {
+	iterator++
+	if iterator >= len(waves) {
+		iterator = 0
+	}
+	return waves[iterator]
 }
