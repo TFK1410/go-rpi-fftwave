@@ -18,6 +18,7 @@ var (
 	currentRoSWStatus int
 	lastRoSWStatus    int
 	pressTimer        time.Time
+	longPressTime     time.Duration
 	encoderChannel    chan<- EncoderMessage
 )
 
@@ -32,12 +33,13 @@ const (
 	LongPress
 )
 
-func initEncoder(DTpin, CLKpin, SWpin int, messages chan<- EncoderMessage, wg *sync.WaitGroup, quit <-chan struct{}) {
+func initEncoder(DTpin, CLKpin, SWpin int, pressTime float64, messages chan<- EncoderMessage, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 	embd.InitGPIO()
 	defer embd.CloseGPIO()
 
 	encoderChannel = messages
+	longPressTime = time.Duration(pressTime * float64(time.Second))
 
 	var err error
 
@@ -77,7 +79,7 @@ func callClear(pin embd.DigitalPin) {
 	if currentRoSWStatus == 0 && lastRoSWStatus == 1 {
 		pressTimer = time.Now()
 	} else if currentRoSWStatus == 1 && lastRoSWStatus == 0 {
-		if time.Since(pressTimer) > longPress {
+		if time.Since(pressTimer) > longPressTime {
 			sendMessage(LongPress, encoderChannel)
 		} else {
 			sendMessage(ButtonPress, encoderChannel)

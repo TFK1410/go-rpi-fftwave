@@ -22,15 +22,17 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 	case curFFT = <-fftOutChan:
 	}
 
-	ticker := time.Tick(time.Second / targetRefreshRate)
-	smoothFFT := make([]float64, dataWidth)
+	ticker := time.Tick(time.Second / time.Duration(cfg.Display.RefreshRate))
+	smoothFFT := make([]float64, cfg.FFT.BinCount)
 
-	dotsValue := make([]float64, dataWidth)
-	dotsTimeLeft := make([]time.Duration, dataWidth)
+	dotsValue := make([]float64, cfg.FFT.BinCount)
+	dotsTimeLeft := make([]time.Duration, cfg.FFT.BinCount)
+	dotsHangTime := time.Duration(cfg.WhiteDot.HangTime * float64(time.Second))
 	var start time.Time
 	var elapsed time.Duration
 
-	soundEnergyColors := make([]color.RGBA, soundEnergyHistoryCount)
+	soundEnergyColors := make([]color.RGBA, cfg.SoundEnergy.HistoryCount)
+	hueTime := time.Duration(cfg.SoundEnergy.HueTime * float64(time.Second))
 	var soundEnergy float64
 	var soundEnergyTimer time.Duration
 
@@ -46,7 +48,7 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 
 		soundEnergy = 0
 		for i := range smoothFFT {
-			smoothFFT[i] = fftSmoothCurve*smoothFFT[i] + (1-fftSmoothCurve)*curFFT[i]
+			smoothFFT[i] = cfg.Display.FFTSmoothCurve*smoothFFT[i] + (1-cfg.Display.FFTSmoothCurve)*curFFT[i]
 			soundEnergy += math.Pow(smoothFFT[i], 2)
 		}
 
@@ -55,41 +57,42 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 
 		soundEnergy = math.Sqrt(soundEnergy)
 		copy(soundEnergyColors[1:], soundEnergyColors[0:len(soundEnergyColors)-2])
+		soundEnergyColors[0] = soundHue(&soundEnergyTimer, hueTime, elapsed, soundEnergy)
 
-		soundEnergyColors[0] = soundHue(&soundEnergyTimer, elapsed, soundEnergy)
-
-		whiteDotCalc(dotsValue, dotsTimeLeft, smoothFFT, elapsed)
+		whiteDotCalc(dotsValue, dotsHangTime, dotsTimeLeft, smoothFFT, elapsed)
 
 		drawloops.BasicWave.Draw(c, smoothFFT, dotsValue, soundEnergyColors)
+		c.Render()
+
 		// fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergy)
 	}
 }
 
-func whiteDotCalc(dotsValue []float64, dotsTimeLeft []time.Duration, fft []float64, elapsed time.Duration) {
+func whiteDotCalc(dotsValue []float64, hangTime time.Duration, dotsTimeLeft []time.Duration, fft []float64, elapsed time.Duration) {
 	for i := range dotsValue {
 		if dotsValue[i] < fft[i] {
 			dotsValue[i] = fft[i]
-			dotsTimeLeft[i] = whiteDotHangTime
+			dotsTimeLeft[i] = hangTime
 		} else {
 			if dotsTimeLeft[i] > 0 {
 				dotsTimeLeft[i] -= elapsed
 			}
 			if dotsTimeLeft[i] <= 0 {
-				dotsValue[i] -= elapsed.Seconds() * whiteDotDropSpeed
+				dotsValue[i] -= elapsed.Seconds() * cfg.WhiteDot.DropSpeed
 			}
 		}
 	}
 }
 
-func soundHue(timer *time.Duration, elapsed time.Duration, soundEnergy float64) color.RGBA {
+func soundHue(timer *time.Duration, hueTime, elapsed time.Duration, soundEnergy float64) color.RGBA {
 	var H, S, V float64
-	if *timer += elapsed; *timer > soundEnergyHueTime {
+	if *timer += elapsed; *timer > hueTime {
 		*timer = 0
 	}
 
-	H = timer.Seconds() / soundEnergyHueTime.Seconds()
-	S = float64(soundEnergySaturation / 100)
-	V = (soundEnergy - soundEnergyMin) / (soundEnergyMax - soundEnergyMin)
+	H = timer.Seconds() / hueTime.Seconds()
+	S = float64(cfg.SoundEnergy.Saturation / 100)
+	V = (soundEnergy - cfg.SoundEnergy.Min) / (cfg.SoundEnergy.Max - cfg.SoundEnergy.Min)
 
 	if V < 0 {
 		V = 0

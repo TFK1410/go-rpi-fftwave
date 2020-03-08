@@ -60,8 +60,8 @@ func calculateBins(minHz, maxHz float64, width, sampleRate, chunkSize int) []int
 		fftBins[i] = int(math.Round(float64(chunkSize) * freqBands[i] / float64(sampleRate)))
 		if fftBins[i] < 1 {
 			fftBins[i] = 1
-		} else if fftBins[i] > 1<<chunkPower {
-			fftBins[i] = 1 << chunkPower
+		} else if fftBins[i] > chunkSize {
+			fftBins[i] = chunkSize
 		}
 	}
 	return fftBins

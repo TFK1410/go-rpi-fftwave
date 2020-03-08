@@ -1,0 +1,40 @@
+matrixConfig:
+  rows: 32
+  cols: 64
+  chain: 4
+  parallel: 1
+  pwmBits: 11
+  pwmLSBNanoseconds: 130
+  initialBrightness: 30
+  scanMode: 0
+  disableHardwarePulsing: false
+  showRefresh: false
+  inverseColors: false
+  hardwareMapping: "regular"
+sampleRate: 44100
+fftConfig:
+  chunkPower: 13
+  fftUpdateRate: 100
+  binCount: 64
+displayConfig:
+  refreshRate: 120
+  fftSmoothCurve: 0.75
+  minHz: 36
+  maxHz: 20000
+  minVal: 110
+  maxVal: 155
+whiteDotConfig:
+  hangTime: 0.5
+  dropSpeed: 25
+soundEnergyConfig:
+  historyCount: 128
+  min: 900
+  max: 1750
+  saturation: 100
+  hueTime: 10
+encoderConfig:
+  dtPin: 16
+  clkPin: 20
+  swPin: 12
+  longPressTime: 2
+dmxConfig:

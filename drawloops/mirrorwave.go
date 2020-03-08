@@ -39,7 +39,6 @@ func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, data, dots []float64, soundEnergy
 			}
 		}
 	}
-	c.Render()
 }
 
 func (m *MirrorWave) drawPixels(c *rgbmatrix.Canvas, x, y, maxX int, clr color.RGBA) {

@@ -24,9 +24,9 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 	plan := fftw.NewPlan1d(compData, false, true)
 	defer plan.Free()
 
-	fftBins := calculateBins(minHz, maxHz, dataWidth, sampleRate, 1<<chunkPower)
+	fftBins := calculateBins(cfg.Display.MinHz, cfg.Display.MaxHz, cfg.FFT.BinCount, cfg.SampleRate, 1<<cfg.FFT.ChunkPower)
 
-	outFFT := make([]float64, dataWidth)
+	outFFT := make([]float64, cfg.FFT.BinCount)
 
 	for {
 		select {
@@ -70,7 +70,7 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 //to bins in logarithmic space
 func fftToBins(fftBins []int, data, out []float64) {
 	var maxFromBins, logFromMax float64
-	for i := 0; i < dataWidth; i++ {
+	for i := 0; i < len(out); i++ {
 		if fftBins[i] != fftBins[i+1] {
 			maxFromBins = maxFromRange(fftBins[i], fftBins[i+1], data)
 		} else {
