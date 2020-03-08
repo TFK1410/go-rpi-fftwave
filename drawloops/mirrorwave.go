@@ -26,33 +26,32 @@ func (m *MirrorWave) InitWave(dataWidth int, minVal, maxVal float64) {
 
 //Draw ...
 func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, dmxColor color.RGBA, data, dots []float64, soundEnergyHistory []color.RGBA) {
-	bounds := c.Bounds()
 	for x, val := range data {
 		for y, bar := range m.colBarriers {
 			if val > bar {
 				if dmxColor.A > 0 {
-					m.drawPixels(c, x, y, bounds.Max.X, dmxColor)
+					m.drawPixels(c, x, y, dmxColor)
 				} else {
-					m.drawPixels(c, x, y, bounds.Max.X, m.heightColors[y])
+					m.drawPixels(c, x, y, m.heightColors[y])
 				}
 			} else {
-				m.drawPixels(c, x, y, bounds.Max.X, soundEnergyHistory[m.radiusIndexes[x][y]])
+				m.drawPixels(c, x, y, soundEnergyHistory[m.radiusIndexes[x][y]])
 			}
 			if dots[x] > bar {
 				if y == 0 || m.colBarriers[y-1] > dots[x] {
-					m.drawPixels(c, x, y, bounds.Max.X, color.RGBA{255, 255, 255, 255})
+					m.drawPixels(c, x, y, color.RGBA{255, 255, 255, 255})
 				}
 			}
 		}
 	}
 }
 
-func (m *MirrorWave) drawPixels(c *rgbmatrix.Canvas, x, y, maxX int, clr color.RGBA) {
-	if y < len(m.colBarriers)/2 {
-		c.Set((maxX+1)/4-1-x, y, clr)
-		c.Set((maxX+1)/4+x, y, clr)
+func (m *MirrorWave) drawPixels(c *rgbmatrix.Canvas, x, y int, clr color.RGBA) {
+	if y < m.dataHeight/2 {
+		c.Set(m.dataWidth-1-x, y, clr)
+		c.Set(m.dataWidth+x, y, clr)
 	} else {
-		c.Set((maxX+1)/4*3-1-x, y-len(m.colBarriers)/2, clr)
-		c.Set((maxX+1)/4*3+x, y-len(m.colBarriers)/2, clr)
+		c.Set(3*m.dataWidth-1-x, y-m.dataHeight/2, clr)
+		c.Set(3*m.dataWidth+x, y-m.dataHeight/2, clr)
 	}
 }
