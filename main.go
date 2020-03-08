@@ -24,8 +24,6 @@ var (
 	disableHardwarePulsing = flag.Bool("led-no-hardware-pulse", false, "Don't use hardware pin-pulse generation.")
 )
 
-const threadCount = 4
-
 //SoundSync struct contains variables used for the synchronization of the recording and FFT threads
 type SoundSync struct {
 	sb   chan *soundbuffer.SoundBuffer
@@ -39,12 +37,8 @@ func main() {
 	signal.Notify(quit, os.Interrupt, os.Kill)
 
 	//Setup a waitGroup and quit channels for the goroutines
-	var quits [threadCount]chan struct{}
-	for i := range quits {
-		quits[i] = make(chan struct{})
-	}
+	var quits []chan struct{}
 	var wg sync.WaitGroup
-	wg.Add(threadCount)
 
 	var ss SoundSync
 	sb := make(chan *soundbuffer.SoundBuffer)
@@ -53,11 +47,13 @@ func main() {
 
 	//Setup recording buffer and start the goroutine
 	r, _ := soundbuffer.NewBuffer(1 << chunkPower)
-	ss.quit = quits[0]
+	quits = addThread(&wg, quits)
+	ss.quit = quits[len(quits)-1]
 	go initRecord(r, sampleRate/fftUpdateRate, ss)
 
 	//Setup FFT thread
-	ss.quit = quits[1]
+	quits = addThread(&wg, quits)
+	ss.quit = quits[len(quits)-1]
 	fftOutChan := make(chan []float64)
 	go initFFT(1<<chunkPower, fftOutChan, ss)
 
@@ -75,31 +71,24 @@ func main() {
 	config.DisableHardwarePulsing = *disableHardwarePulsing
 
 	m, err := rgbmatrix.NewRGBLedMatrix(config)
-	fatal(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	c := rgbmatrix.NewCanvas(m)
 	defer c.Close()
 
 	//Setup FFT smoothing thread
-	go initFFTSmooth(c, fftOutChan, &wg, quits[2])
+	quits = addThread(&wg, quits)
+	go initFFTSmooth(c, fftOutChan, &wg, quits[len(quits)-1])
 
 	//Start encoder thread
 	encMessage := make(chan EncoderMessage)
-	go initEncoder(dtPin, clkPin, swPin, encMessage, &wg, quits[3])
+	quits = addThread(&wg, quits)
+	go initEncoder(dtPin, clkPin, swPin, encMessage, &wg, quits[len(quits)-1])
 
 	for {
 		select {
-		case <-quit:
-			log.Println("Terminating goroutines")
-
-			for i := range quits {
-				close(quits[i])
-			}
-
-			ss.wg.Wait()
-			close(encMessage)
-			log.Println("DONE")
-			return
 		case msg := <-encMessage:
 			switch msg {
 			case BrightnessUp:
@@ -113,16 +102,26 @@ func main() {
 			case ButtonPress:
 			case LongPress:
 			}
+		case <-quit:
+			log.Println("Terminating goroutines")
+
+			for i := range quits {
+				close(quits[i])
+			}
+
+			ss.wg.Wait()
+			close(encMessage)
+			log.Println("DONE")
+			return
 		}
 	}
 }
 
-func init() {
-	flag.Parse()
+func addThread(wg *sync.WaitGroup, quits []chan struct{}) []chan struct{} {
+	wg.Add(1)
+	return append(quits, make(chan struct{}))
 }
 
-func fatal(err error) {
-	if err != nil {
-		panic(err)
-	}
+func init() {
+	flag.Parse()
 }

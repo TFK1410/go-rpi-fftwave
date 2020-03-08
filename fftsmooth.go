@@ -30,7 +30,6 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 	var start time.Time
 	var elapsed time.Duration
 
-	// soundEnergyHistory := make([]float64, soundEnergyHistoryCount)
 	soundEnergyColors := make([]color.RGBA, soundEnergyHistoryCount)
 	var soundEnergy float64
 	var soundEnergyTimer time.Duration
@@ -62,7 +61,7 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 		whiteDotCalc(dotsValue, dotsTimeLeft, smoothFFT, elapsed)
 
 		drawloops.BasicWave.Draw(c, smoothFFT, dotsValue, soundEnergyColors)
-		//fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergy[0])
+		// fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergy)
 	}
 }
 
