@@ -20,8 +20,6 @@ func initDMX(slaveAddress byte, clr *color.RGBA, wg *sync.WaitGroup, quit <-chan
 	bus := embd.NewI2CBus(1)
 	defer bus.Close()
 
-	clr.A = 0xff
-
 	for {
 		bytes, err := bus.ReadBytes(slaveAddress, 4)
 		if err != nil {

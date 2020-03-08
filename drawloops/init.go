@@ -8,7 +8,7 @@ import (
 
 type wave interface {
 	InitWave(int, float64, float64)
-	Draw(*rgbmatrix.Canvas, []float64, []float64, []color.RGBA)
+	Draw(*rgbmatrix.Canvas, color.RGBA, []float64, []float64, []color.RGBA)
 }
 
 //BasicWave ...

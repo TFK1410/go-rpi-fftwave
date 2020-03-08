@@ -11,7 +11,7 @@ import (
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
-func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.WaitGroup, quit <-chan struct{}) {
+func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, dmxColor *color.RGBA, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 
 	//Wait for the first batch of FFT data
@@ -61,7 +61,8 @@ func initFFTSmooth(c *rgbmatrix.Canvas, fftOutChan <-chan []float64, wg *sync.Wa
 
 		whiteDotCalc(dotsValue, dotsHangTime, dotsTimeLeft, smoothFFT, elapsed)
 
-		drawloops.BasicWave.Draw(c, smoothFFT, dotsValue, soundEnergyColors)
+		drawloops.BasicWave.Draw(c, *dmxColor, smoothFFT, dotsValue, soundEnergyColors)
+
 		c.Render()
 
 		// fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergy)

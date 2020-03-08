@@ -61,8 +61,9 @@ func main() {
 	defer c.Close()
 
 	//Setup FFT smoothing thread
+	var dmxColor color.RGBA
 	quits = addThread(&wg, quits)
-	go initFFTSmooth(c, fftOutChan, &wg, quits[len(quits)-1])
+	go initFFTSmooth(c, fftOutChan, &dmxColor, &wg, quits[len(quits)-1])
 
 	//Start encoder thread
 	encMessage := make(chan EncoderMessage)
@@ -70,9 +71,8 @@ func main() {
 	go initEncoder(cfg.Encoder.DTPin, cfg.Encoder.CLKPin, cfg.Encoder.SWPin, cfg.Encoder.LongPressTime, encMessage, &wg, quits[len(quits)-1])
 
 	//Start DMX reader thread
-	var clr color.RGBA
 	quits = addThread(&wg, quits)
-	go initDMX(cfg.DMX.SlaveAddress, &clr, &wg, quits[len(quits)-1])
+	go initDMX(cfg.DMX.SlaveAddress, &dmxColor, &wg, quits[len(quits)-1])
 
 	for {
 		select {
@@ -88,6 +88,11 @@ func main() {
 				}
 			case ButtonPress:
 			case LongPress:
+				if dmxColor.A > 0 {
+					dmxColor.A = 0
+				} else {
+					dmxColor.A = 255
+				}
 			}
 		case <-quit:
 			log.Println("Terminating goroutines")

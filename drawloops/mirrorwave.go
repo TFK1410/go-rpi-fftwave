@@ -23,12 +23,16 @@ func (m *MirrorWave) InitWave(dataWidth int, minVal, maxVal float64) {
 }
 
 //Draw ...
-func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, data, dots []float64, soundEnergyHistory []color.RGBA) {
+func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, dmxColor color.RGBA, data, dots []float64, soundEnergyHistory []color.RGBA) {
 	bounds := c.Bounds()
 	for x, val := range data {
 		for y, bar := range m.colBarriers {
 			if val > bar {
-				m.drawPixels(c, x, y, bounds.Max.X, m.heightColors[y])
+				if dmxColor.A > 0 {
+					m.drawPixels(c, x, y, bounds.Max.X, dmxColor)
+				} else {
+					m.drawPixels(c, x, y, bounds.Max.X, m.heightColors[y])
+				}
 			} else {
 				m.drawPixels(c, x, y, bounds.Max.X, soundEnergyHistory[m.radiusIndexes[x][y]])
 			}
