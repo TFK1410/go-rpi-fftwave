@@ -6,7 +6,7 @@ import (
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
-//Wave ...
+// Wave is used for the implementation of any possible display patterns
 type Wave interface {
 	InitWave(int, float64, float64)
 	Draw(*rgbmatrix.Canvas, color.RGBA, []float64, []float64, []color.RGBA)
@@ -15,7 +15,7 @@ type Wave interface {
 var iterator int
 var waves []Wave
 
-//InitWaves ...
+// InitWaves creates the wave types array and initializes every one of them
 func InitWaves(dataWidth int, minVal, maxVal float64) {
 	waves = append(waves, &MirrorWave{})
 	waves = append(waves, &QuadWave{})
@@ -27,12 +27,12 @@ func InitWaves(dataWidth int, minVal, maxVal float64) {
 	}
 }
 
-//GetFirstWave ...
+// GetFirstWave returns the first wave type from the array
 func GetFirstWave() Wave {
 	return waves[0]
 }
 
-//GetNextWave ...
+// GetNextWave returns the next wave type from the slice
 func GetNextWave() Wave {
 	iterator++
 	if iterator >= len(waves) {

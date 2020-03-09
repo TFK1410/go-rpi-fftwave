@@ -9,14 +9,14 @@ import (
 	"github.com/cpmech/gosl/fun/fftw"
 )
 
-//initFFT function is a start for the goroutine handling the FFT part of the application.
-//bfz is the number of elements in a single FFT call.
-//Should be the same as the ring buffer size.
+// initFFT function is a start for the goroutine handling the FFT part of the application.
+// bfz is the number of elements in a single FFT call.
+// Should be the same as the ring buffer size.
 func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 	defer ss.wg.Done()
-	// start := time.Now()
+	//  start := time.Now()
 
-	//Generate a plan for FFTW
+	// Generate a plan for FFTW
 	var r *soundbuffer.SoundBuffer
 	var data []int16
 	compData := make([]complex128, bfz)
@@ -24,6 +24,7 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 	plan := fftw.NewPlan1d(compData, false, true)
 	defer plan.Free()
 
+	// Calculate the logarithmic bins
 	fftBins := calculateBins(cfg.Display.MinHz, cfg.Display.MaxHz, cfg.FFT.BinCount, cfg.SampleRate, 1<<cfg.FFT.ChunkPower)
 
 	outFFT := make([]float64, cfg.FFT.BinCount)
@@ -40,22 +41,24 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 		// log.Printf("Sleep time: %v\n", elapsed)
 		// start = time.Now()
 
-		//Convert int16 data into complex128
+		// Convert int16 data into complex128
 		data = r.Sound()
 		for i := range data {
 			compData[i] = complex(float64(data[i]), 0)
 		}
 
-		//Execute the plan
+		// Execute the plan
 		plan.Execute()
 
-		//Convert the data to real values
+		// Convert the data to real values
 		for i := range compData {
 			realData[i] = cmplx.Abs(compData[i])
 		}
 
+		// Convert the linear data to logarithmic space
 		fftToBins(fftBins, realData, outFFT)
 
+		// Send the new data to the smoothing goroutine without blocking
 		select {
 		case fftOutChan <- outFFT:
 		default:
@@ -66,8 +69,8 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 	}
 }
 
-//fftToBins translates the result of Fourier transform which is in linear bins
-//to bins in logarithmic space
+// fftToBins translates the result of Fourier transform which is in linear bins
+// to bins in logarithmic space
 func fftToBins(fftBins []int, data, out []float64) {
 	var maxFromBins, logFromMax float64
 	for i := 0; i < len(out); i++ {

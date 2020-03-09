@@ -14,7 +14,7 @@ import (
 func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutChan <-chan []float64, dmxColor *color.RGBA, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 
-	//Wait for the first batch of FFT data
+	// Wait for the first batch of FFT data
 	var curFFT []float64
 	select {
 	case <-quit:
@@ -22,21 +22,26 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 	case curFFT = <-fftOutChan:
 	}
 
+	// Create a loop ticker that will try to keep the display in the specified refresh rate
 	ticker := time.Tick(time.Second / time.Duration(cfg.Display.RefreshRate))
+
+	// Create the buffer for the smoothed out FFT data to be displayed
 	smoothFFT := make([]float64, cfg.FFT.BinCount)
 
+	// Setup the white dot buffers and timers
 	dotsValue := make([]float64, cfg.FFT.BinCount)
 	dotsTimeLeft := make([]time.Duration, cfg.FFT.BinCount)
 	dotsHangTime := time.Duration(cfg.WhiteDot.HangTime * float64(time.Second))
 	var start time.Time
 	var elapsed time.Duration
 
+	// Setup the sound energy buffers and timers
 	soundEnergyColors := make([]color.RGBA, cfg.SoundEnergy.HistoryCount)
 	hueTime := time.Duration(cfg.SoundEnergy.HueTime * float64(time.Second))
 	var soundEnergy float64
 	var soundEnergyTimer time.Duration
 
-	//Wait for the first wave display type to be selected
+	// Wait for the first wave display type to be selected
 	var wave drawloops.Wave
 	select {
 	case <-quit:
@@ -56,6 +61,7 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 		case <-ticker:
 		}
 
+		// Calculate the smoothed FFT values and the sound energy
 		soundEnergy = 0
 		for i := range smoothFFT {
 			smoothFFT[i] = cfg.Display.FFTSmoothCurve*smoothFFT[i] + (1-cfg.Display.FFTSmoothCurve)*curFFT[i]
@@ -65,20 +71,25 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 		elapsed = time.Since(start)
 		start = time.Now()
 
+		// Add the current sound energy to the history buffer and convert it into color
 		soundEnergy = math.Sqrt(soundEnergy)
 		copy(soundEnergyColors[1:], soundEnergyColors[0:len(soundEnergyColors)-2])
 		soundEnergyColors[0] = soundHue(&soundEnergyTimer, hueTime, elapsed, soundEnergy)
 
+		// Calculate the current state of the white dots
 		whiteDotCalc(dotsValue, dotsHangTime, dotsTimeLeft, smoothFFT, elapsed)
 
+		// Generate the current canvas to be displayed
 		wave.Draw(c, *dmxColor, smoothFFT, dotsValue, soundEnergyColors)
 
+		// Call the main render of the canvas
 		c.Render()
 
 		// fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergy)
 	}
 }
 
+// Calculate the elapsed time for the white dots hang and lower the values if necessary
 func whiteDotCalc(dotsValue []float64, hangTime time.Duration, dotsTimeLeft []time.Duration, fft []float64, elapsed time.Duration) {
 	for i := range dotsValue {
 		if dotsValue[i] < fft[i] {
@@ -95,6 +106,7 @@ func whiteDotCalc(dotsValue []float64, hangTime time.Duration, dotsTimeLeft []ti
 	}
 }
 
+// Based on time the sound energy values are being translated from HSV to RGB values
 func soundHue(timer *time.Duration, hueTime, elapsed time.Duration, soundEnergy float64) color.RGBA {
 	var H, S, V float64
 	if *timer += elapsed; *timer > hueTime {
@@ -115,7 +127,7 @@ func soundHue(timer *time.Duration, hueTime, elapsed time.Duration, soundEnergy 
 
 }
 
-//H S V parameters are all between 0 and 1
+// H S V parameters are all between 0 and 1
 func hsv2RGB(H, S, V float64) color.RGBA {
 	var r, g, b float64
 	if S == 0 {
@@ -157,7 +169,8 @@ func hsv2RGB(H, S, V float64) color.RGBA {
 			g = v1
 			b = v2
 		}
-		r = r * 255 //RGB results from 0 to 255
+		// RGB results from 0 to 255
+		r = r * 255
 		g = g * 255
 		b = b * 255
 	}

@@ -11,16 +11,22 @@ import (
 
 func initDMX(slaveAddress byte, clr *color.RGBA, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
+
+	// Initialize the I2C communication using the embd package
 	err := embd.InitI2C()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer embd.CloseI2C()
 
+	// Create a new I2CBus
 	bus := embd.NewI2CBus(1)
 	defer bus.Close()
 
 	for {
+		// Listen in on the I2CBus with the specified slave address
+		// first four bytes are read
+		// if the first one is not zero then a new color is being registered from the next 4 bytes
 		bytes, err := bus.ReadBytes(slaveAddress, 4)
 		if err != nil {
 			log.Println(err)
@@ -34,6 +40,7 @@ func initDMX(slaveAddress byte, clr *color.RGBA, wg *sync.WaitGroup, quit <-chan
 
 		select {
 		case <-quit:
+			// Close the goroutine letting the defers trigger
 			log.Println("Stopping dmx reader thread")
 			return
 		}

@@ -39,6 +39,8 @@ func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, ss SoundSync) e
 	}
 
 	for {
+		// With the non callback stream reading method the buffer can sometimes overflow
+		// We ignore that error and continue onto the next loop
 		err = stream.Read()
 		if err != nil {
 			if err.Error() == "Input overflowed" {
@@ -52,6 +54,7 @@ func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, ss SoundSync) e
 
 		select {
 		case <-ss.quit:
+			// Wrap up the audio stream after the quit message is received
 			log.Println("Stopping audio stream")
 			err := stream.Stop()
 			if err != nil {
@@ -59,7 +62,7 @@ func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, ss SoundSync) e
 			}
 			return nil
 		case <-record:
-			//Calling record in a separate goroutine so that the PA buffer doesn't get overflown
+			// Calling record in a separate goroutine so that the PA buffer doesn't get overflown
 			go saveRecording(r.Sound())
 		case ss.sb <- r:
 		default:
@@ -67,6 +70,9 @@ func initRecord(r *soundbuffer.SoundBuffer, samplesPerFrame int, ss SoundSync) e
 	}
 }
 
+// saveRecording function saves the current data in the buffer to a raw_wave file
+// this not at all in any sort of wave format
+// however this can be read through for example Audacity with the raw wave import functions
 func saveRecording(data []int16) {
 	file, err := os.Create("raw_wave")
 	if err != nil {
@@ -75,7 +81,6 @@ func saveRecording(data []int16) {
 	}
 
 	for _, sample := range data {
-		//fmt.Printf("%v ", sample)
 		err = binary.Write(file, binary.LittleEndian, sample)
 		if err != nil {
 			log.Printf("error writing to file: %v\n", err)

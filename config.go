@@ -63,6 +63,7 @@ type dmxConfig struct {
 }
 
 // Configuration is a struct holding the config of the application
+// details regarding these fields can be found in config.yml
 type Configuration struct {
 	Matrix      *rgbmatrix.HardwareConfig
 	IntMatrix   matrixConfig      `yaml:"matrixConfig"`
@@ -145,6 +146,7 @@ func loadConfig(cfg *Configuration, path string) error {
 	return nil
 }
 
+// createMatrixConfig converts the internal matrix config (with the yaml mappings) to the rgbmatrix.HardwareConfig format
 func createMatrixConfig(cfg *Configuration) {
 	cfg.Matrix = &rgbmatrix.DefaultConfig
 	cfg.Matrix.Rows = cfg.IntMatrix.Rows
