@@ -127,8 +127,8 @@ var cfg Configuration = Configuration{
 	},
 }
 
-func loadConfig(cfg *Configuration) error {
-	f, err := os.Open("config.yml")
+func loadConfig(cfg *Configuration, path string) error {
+	f, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("Error opening the config file: %v", err)
 	}

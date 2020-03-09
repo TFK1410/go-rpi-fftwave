@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"image/color"
 	"log"
 	"os"
@@ -19,8 +20,13 @@ type SoundSync struct {
 	quit <-chan struct{}
 }
 
+var configPath = flag.String("config", "config.yml", "Path to the script configuration file")
+
 func main() {
-	err := loadConfig(&cfg)
+	flag.StringVar(configPath, "c", "config.yml", "Path to the script configuration file")
+	flag.Parse()
+
+	err := loadConfig(&cfg, *configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
