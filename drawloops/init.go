@@ -19,6 +19,7 @@ var waves []Wave
 func InitWaves(dataWidth int, minVal, maxVal float64) {
 	waves = append(waves, &MirrorWave{})
 	waves = append(waves, &QuadWave{})
+	waves = append(waves, &QuadWaveSideways{})
 	waves = append(waves, &DualWave{})
 
 	for i := range waves {
