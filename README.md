@@ -1,4 +1,7 @@
 # go-rpi-fftwave
+
+![](images/screen.gif)
+
 ## What it is
 
 This is a project for visualizing sound data on Raspberry Pi using LED screens with HUB75 connections and a soundcard.
