@@ -1,0 +1,10 @@
+[Unit]
+Description=FFT Display control service
+
+[Service]
+ExecStart=/home/pi/go/bin/go-rpi-fftwave -c /home/pi/config.yml
+StandardOutput=null
+
+[Install]
+WantedBy=multi-user.target
+Alias=go-fft-display.service
