@@ -3,7 +3,7 @@
 
 This is a project for visualizing sound data on Raspberry Pi using LED screens with HUB75 connections and a soundcard.
 
-The required software components are FFTW3, rpi-rgb-led-matrix and portaudio libraries.
+The required software components are [FFTW3](http://www.fftw.org/), [rpi-rgb-led-matrix](https://github.com/hzeller/rpi-rgb-led-matrix) and portaudio libraries.
 
 This is a rework of the [rpi-sound-c](https://github.com/TFK1410/rpi-sound-c) project. It worked fine on it's own but it was hard for me to maintain. I've used the dev branch of that repository for a while now but I figured it's time for a change.
 
