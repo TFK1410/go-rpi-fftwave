@@ -1,41 +1,96 @@
+# This whole configuration file can be used to overwrite the existing defaults in the code
+# any of the options can be skipped and the default value will be put in its place
+
+# General matrix configuration that will be passed on to the rpi-rgb-led-matrix library
+# more details about each of those options can be found here: https://github.com/TFK1410/go-rpi-rgb-led-matrix/blob/master/matrix.go
 matrixConfig:
+  # number of rows per led matrix
   rows: 32
+  # number of columns per led matrix
   cols: 64
+  # number led matrices in a chain
   chain: 4
+  # number of led matrices chains
   parallel: 1
+  # number of bits used for output
+  # lower value decreases CPU usage and increases refresh rate at the cost of color fidelity
   pwmBits: 11
+  # time used for the on-time in the least significant bit
+  # lower value lowers color fidelity but increases the refresh rate
   pwmLSBNanoseconds: 130
+  # initial brightness value in range 0..100
   initialBrightness: 30
+  # scan mode for the display
+  # 0 - progressive, 1 - interlaced
   scanMode: 0
+  # disables hardware pulsing for debugging
   disableHardwarePulsing: false
+  # display refresh rate
   showRefresh: false
+  # inverse displayed colors
   inverseColors: false
+  # name of the used GPIO mapping
   hardwareMapping: "regular"
+# sample rate of the recorded signal
 sampleRate: 44100
+# Config for the FFT calculation
 fftConfig:
+  # 2^x number of samples that will be calculated with FFT
   chunkPower: 13
+  # number of times per second that the current FFT values are calculcated
   fftUpdateRate: 100
+  # number of output data width in the logarithmic space
   binCount: 64
+# Configuration for the way the waves are displayed
 displayConfig:
+  # number of times the display gets refreshed (this will only be the target value)
+  # if the application won't be able to keep up with this config then the refresh rate will be lower and erratic
   refreshRate: 120
+  # smoothing curve values between the current displayed values to the current FFT values
+  # higher value means a smoother display but less accurate from current FFT values
   fftSmoothCurve: 0.75
+  # minimum Hz value that will be displayed on the display
   minHz: 36
+  # maximum Hz value that will be displayed on the display
   maxHz: 20000
+  # minimum arbitrary FFT value that will be displayed on the display
+  # the lower the value is the less dynamic the display is
   minVal: 110
+  # maximum arbitrary FFT value that will be displayed on the display
+  # the higher the value is the less dynamic the display is
   maxVal: 155
+# Configuration for the white dots that are displayed on the screen above the peaks
 whiteDotConfig:
+  # time in seconds for how long the white dots stick before starting to fall dowm
   hangTime: 0.5
+  # the speed of the falling of the white dots values
+  # this is the same value arbitrary unit as in the minVal and maxVal display settings
   dropSpeed: 40
+# Configuration for the sound energy display
 soundEnergyConfig:
+  # the max number of energy values that are kept in a buffer
+  # this should be at least the max radius of the energy ripple
   historyCount: 128
+  # minimum sound energy value that will be shown in color
   min: 900
+  # sound energy value required to show the color at full brightness
   max: 1750
+  # saturation of the displayed sound energy colors
   saturation: 100
+  # time in seconds it takes to do a full rotation of hue colors to be displayed
   hueTime: 10
+# Configuration for the rotating encoder
+# the pin numbers are refered to using the Broadcom SOC channel (BCM)
 encoderConfig:
+  # DTPin used for the encoder
   dtPin: 16
+  # CLPin used for the encoder
   clkPin: 20
+  # SWPin used for the encoder
   swPin: 12
+  # time in seconds that it takes for the long press to be triggered instead of a short press
   longPressTime: 1
+# Configuration for the DMX communication through a connected Arduino
 dmxConfig:
+  # I2C slave address
   slaveAddress: 0x04
