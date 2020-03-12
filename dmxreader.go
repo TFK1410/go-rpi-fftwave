@@ -27,15 +27,18 @@ func initDMX(slaveAddress byte, clr *color.RGBA, wg *sync.WaitGroup, quit <-chan
 		// Listen in on the I2CBus with the specified slave address
 		// first four bytes are read
 		// if the first one is not zero then a new color is being registered from the next 4 bytes
-		bytes, err := bus.ReadBytes(slaveAddress, 4)
+		// fifth byte in sequence is the dimmer
+		bytes, err := bus.ReadBytes(slaveAddress, 5)
 		if err != nil {
 			log.Println(err)
-			return
+			continue
 		}
+
 		if len(bytes) > 0 && bytes[0] > 0 {
 			clr.R = bytes[1]
 			clr.G = bytes[2]
 			clr.B = bytes[3]
+			clr.A = bytes[4]
 		}
 
 		select {
@@ -43,6 +46,7 @@ func initDMX(slaveAddress byte, clr *color.RGBA, wg *sync.WaitGroup, quit <-chan
 			// Close the goroutine letting the defers trigger
 			log.Println("Stopping dmx reader thread")
 			return
+		default:
 		}
 	}
 }
