@@ -28,7 +28,8 @@ func initDMX(slaveAddress byte, clr *color.RGBA, wg *sync.WaitGroup, quit <-chan
 		// first four bytes are read
 		// if the first one is not zero then a new color is being registered from the next 4 bytes
 		// fifth byte in sequence is the dimmer
-		bytes, err := bus.ReadBytes(slaveAddress, 5)
+		// this is closely coupled with the Arduino sketch that's bundled with this code
+		bytes, err := bus.ReadBytes(slaveAddress, 4)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -38,7 +39,6 @@ func initDMX(slaveAddress byte, clr *color.RGBA, wg *sync.WaitGroup, quit <-chan
 			clr.R = bytes[1]
 			clr.G = bytes[2]
 			clr.B = bytes[3]
-			clr.A = bytes[4]
 		}
 
 		select {
