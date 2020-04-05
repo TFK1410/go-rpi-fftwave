@@ -62,18 +62,25 @@ type dmxConfig struct {
 	SlaveAddress byte `yaml:"slaveAddress,omitempty"`
 }
 
+type lyricsOverlayConfig struct {
+	RefreshRate int    `yaml:"refreshRate,omitempty"`
+	LyricsDir   string `yaml:"lyricsDir,omitempty"`
+	FontFile    string `yaml:"fontFile,omitempty"`
+}
+
 // Configuration is a struct holding the config of the application
 // details regarding these fields can be found in config.yml
 type Configuration struct {
 	Matrix      *rgbmatrix.HardwareConfig
-	IntMatrix   matrixConfig      `yaml:"matrixConfig"`
-	SampleRate  int               `yaml:"sampleRate"`
-	FFT         fftConfig         `yaml:"fftConfig"`
-	Display     displayConfig     `yaml:"displayConfig"`
-	WhiteDot    whiteDotConfig    `yaml:"whiteDotConfig"`
-	SoundEnergy soundEnergyConfig `yaml:"soundEnergyConfig"`
-	Encoder     encoderConfig     `yaml:"encoderConfig"`
-	DMX         dmxConfig         `yaml:"dmxConfig"`
+	IntMatrix   matrixConfig        `yaml:"matrixConfig"`
+	SampleRate  int                 `yaml:"sampleRate"`
+	FFT         fftConfig           `yaml:"fftConfig"`
+	Display     displayConfig       `yaml:"displayConfig"`
+	WhiteDot    whiteDotConfig      `yaml:"whiteDotConfig"`
+	SoundEnergy soundEnergyConfig   `yaml:"soundEnergyConfig"`
+	Encoder     encoderConfig       `yaml:"encoderConfig"`
+	DMX         dmxConfig           `yaml:"dmxConfig"`
+	Lyrics      lyricsOverlayConfig `yaml:"lyricsOverlayConfig"`
 }
 
 // This variable holds the default values
@@ -125,6 +132,11 @@ var cfg Configuration = Configuration{
 	},
 	DMX: dmxConfig{
 		SlaveAddress: 0x04,
+	},
+	Lyrics: lyricsOverlayConfig{
+		RefreshRate: 30,
+		LyricsDir:   "/home/pi/share/go-rpi-fftwave/lyrics",
+		FontFile:    "/home/pi/share/go-rpi-fftwave/lyrics/RobotoMono-Light.ttf",
 	},
 }
 

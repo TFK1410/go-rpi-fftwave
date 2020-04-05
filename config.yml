@@ -94,3 +94,11 @@ encoderConfig:
 dmxConfig:
   # I2C slave address
   slaveAddress: 0x04
+# Configuration for the lyrics overlay feature
+lyricsOverlayConfig:
+  # Refresh rate of the lyrics ticker in addition to the DMX ticks
+  refreshRate: 30
+  # Path to the directory with the .lrc lyric files
+  lyricsDir: "/home/pi/share/go-rpi-fftwave/lyrics"
+  # Path to the font file to be used to draw the lyrics
+  fontFile: "/home/pi/share/go-rpi-fftwave/lyrics/RobotoMono-Light.ttf"

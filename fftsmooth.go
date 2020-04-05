@@ -1,13 +1,16 @@
 package main
 
 import (
+	"image"
 	"image/color"
+	"image/draw"
 	"log"
 	"math"
 	"sync"
 	"time"
 
 	"github.com/TFK1410/go-rpi-fftwave/drawloops"
+	"github.com/TFK1410/go-rpi-fftwave/lyrics"
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
@@ -81,6 +84,10 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 
 		// Generate the current canvas to be displayed
 		wave.Draw(c, *dmxColor, smoothFFT, dotsValue, soundEnergyColors)
+
+		if dmxColor.A == 255 {
+			draw.Draw(c, lyrics.LyricsOverlay.Bounds(), lyrics.LyricsOverlay, image.ZP, draw.Over)
+		}
 
 		// Call the main render of the canvas
 		c.Render()

@@ -2,13 +2,13 @@ package main
 
 import (
 	"flag"
-	"image/color"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 
 	"github.com/TFK1410/go-rpi-fftwave/drawloops"
+	"github.com/TFK1410/go-rpi-fftwave/lyrics"
 	"github.com/TFK1410/go-rpi-fftwave/soundbuffer"
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
@@ -70,11 +70,25 @@ func main() {
 	c := rgbmatrix.NewCanvas(m)
 	defer c.Close()
 
+	// Setup lyrics thread
+	lyricsMeasures := make(chan int)
+	lyricsID := make(chan int)
+	quits = addThread(&wg, quits)
+	o := lyrics.Overlay{
+		SizeX:       cfg.IntMatrix.Cols * 2,
+		SizeY:       cfg.IntMatrix.Rows * 2,
+		RefreshRate: cfg.Lyrics.RefreshRate,
+		FontFile:    cfg.Lyrics.FontFile,
+		LyricsDir:   cfg.Lyrics.LyricsDir,
+	}
+
+	go o.InitLyricsThread(lyricsMeasures, lyricsID, &wg, quits[len(quits)-1])
+
 	// Setup FFT smoothing thread
-	var dmxColor color.RGBA
+	var dmxData DMXData
 	waveChan := make(chan drawloops.Wave)
 	quits = addThread(&wg, quits)
-	go initFFTSmooth(c, waveChan, fftOutChan, &dmxColor, &wg, quits[len(quits)-1])
+	go initFFTSmooth(c, waveChan, fftOutChan, &dmxData.Color, &wg, quits[len(quits)-1])
 	waveChan <- drawloops.GetFirstWave()
 
 	// Start encoder thread
@@ -84,7 +98,9 @@ func main() {
 
 	// Start DMX reader thread
 	quits = addThread(&wg, quits)
-	go initDMX(cfg.DMX.SlaveAddress, &dmxColor, &wg, quits[len(quits)-1])
+	pause := make(chan struct{})
+	play := make(chan struct{})
+	go initDMX(cfg.DMX.SlaveAddress, &dmxData, lyricsMeasures, lyricsID, &wg, quits[len(quits)-1], pause, play)
 
 	for {
 		select {
@@ -106,15 +122,19 @@ func main() {
 				waveChan <- drawloops.GetNextWave()
 			case LongPress:
 				// This will toggle the DMX color display mode
-				if dmxColor.A > 0 {
-					dmxColor.A = 0
+				// The A value of the color is also used by other goroutines to indicate whether the DMX reading is on
+				if dmxData.Color.A > 0 {
+					dmxData.Color.A = 0
+					pause <- struct{}{}
 				} else {
-					dmxColor.A = 255
+					dmxData.Color.A = 255
+					play <- struct{}{}
 				}
 			}
 		// Handle the quit message by forwarding the terminate signal to all goroutines
 		case <-quit:
 			log.Println("Terminating goroutines")
+			log.Println(len(quits), "threads to close")
 
 			for i := range quits {
 				close(quits[i])
@@ -123,6 +143,8 @@ func main() {
 			ss.wg.Wait()
 			close(encMessage)
 			close(waveChan)
+			close(lyricsMeasures)
+			close(lyricsID)
 			log.Println("DONE")
 			return
 		}
