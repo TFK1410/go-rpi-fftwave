@@ -20,9 +20,10 @@ import (
 )
 
 const (
-	size    = 12 //Font size
-	spacing = 1  //Line spacing in pixels
-	dpi     = 72 //Screen DPI the best constant for Freetype
+	//DefaultFontSize is the default size of the font
+	DefaultFontSize = 12 //Font size
+	spacing         = 1  //Line spacing in pixels
+	dpi             = 72 //Screen DPI the best constant for Freetype
 )
 
 //Overlay ...
@@ -32,9 +33,6 @@ type Overlay struct {
 	RefreshRate int
 	SizeX       int
 	SizeY       int
-
-	charWidth    float64
-	charsPerLine float64
 }
 
 func loadFont(path string) (*truetype.Font, error) {
@@ -76,7 +74,7 @@ func initContext(rgba *image.RGBA, f *truetype.Font) *freetype.Context {
 	c := freetype.NewContext()
 	c.SetDPI(dpi)
 	c.SetFont(f)
-	c.SetFontSize(size)
+	c.SetFontSize(DefaultFontSize)
 	c.SetClip(rgba.Bounds())
 	c.SetDst(rgba)
 	c.SetSrc(image.White)
@@ -85,21 +83,23 @@ func initContext(rgba *image.RGBA, f *truetype.Font) *freetype.Context {
 	return c
 }
 
-func (o *Overlay) drawText(rgba *image.RGBA, c *freetype.Context, text []string) {
+func (o *Overlay) drawText(rgba *image.RGBA, c *freetype.Context, lyric *LyricLineData) {
 	// Clear canvas.
 	draw.Draw(rgba, rgba.Bounds(), image.Transparent, image.ZP, draw.Src)
+	if lyric == nil {
+		return
+	}
+
+	charWidth := float64(lyric.size) / 12.0 * 7.0
+	c.SetFontSize(float64(lyric.size))
 
 	// Draw the text.
-	// textHeight := float64(size)
-	// if len(text) > 1 {
-	// 	textHeight += float64((len(text)-1)*size) * spacing
-	// }
-	textHeight := float64(len(text))*float64(size+spacing) - spacing
-	pt := freetype.Pt(0, int(c.PointToFixed((float64(o.SizeY)-textHeight)/2+size-2)>>6))
-	for _, s := range text {
+	textHeight := float64(len(lyric.text))*float64(lyric.size+spacing) - spacing
+	pt := freetype.Pt(0, int(c.PointToFixed((float64(o.SizeY)-textHeight)/2+float64(lyric.size)-2)>>6))
+	for _, s := range lyric.text {
 
 		// Text centering
-		textWidth := o.charWidth*float64(len(s)) + float64(strings.Count(s, " "))
+		textWidth := charWidth*float64(len(s)) + float64(strings.Count(s, " "))
 		whiteSpaceWidth := float64(o.SizeX) - textWidth
 		if whiteSpaceWidth > 0 {
 			pt.X = c.PointToFixed(whiteSpaceWidth / 2)
@@ -112,8 +112,7 @@ func (o *Overlay) drawText(rgba *image.RGBA, c *freetype.Context, text []string)
 			log.Println(err)
 			return
 		}
-		// pt.Y += c.PointToFixed(size * spacing)
-		pt.Y += c.PointToFixed(size + spacing)
+		pt.Y += c.PointToFixed(float64(lyric.size) + spacing)
 	}
 }
 
@@ -197,9 +196,6 @@ var LyricsOverlay *image.RGBA
 func (o *Overlay) InitLyricsThread(lyricsMeasure, lyricsID <-chan int, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 
-	o.charWidth = float64(size / 12.0 * 7.0)
-	o.charsPerLine = float64(o.SizeX) / o.charWidth
-
 	InitLRCRegexp()
 	ld := NewLRCData()
 
@@ -218,7 +214,7 @@ func (o *Overlay) InitLyricsThread(lyricsMeasure, lyricsID <-chan int, wg *sync.
 
 	var curMeasure, curID, newIdx, oldIdx int
 	var curDuration time.Duration
-	var text []string
+	var lyric *LyricLineData
 	oldIdx = -1
 
 	// Wait and load the first incoming lyricsID
@@ -228,7 +224,7 @@ func (o *Overlay) InitLyricsThread(lyricsMeasure, lyricsID <-chan int, wg *sync.
 		// If it is equal to 0 that means that no song is selected right now
 		// The goroutine will be paused until a good ID with an existing .lrc file is found
 		for {
-			if ok := ld.ReloadLyrics(o.LyricsDir, o.charsPerLine, curID); ok {
+			if ok := ld.ReloadLyrics(o.LyricsDir, curID, o.SizeX); ok {
 				break
 			}
 
@@ -251,7 +247,7 @@ func (o *Overlay) InitLyricsThread(lyricsMeasure, lyricsID <-chan int, wg *sync.
 			// If it is equal to 0 that means that no song is selected right now
 			// The goroutine will be paused until a good ID with an existing .lrc file is found
 			for {
-				if ok := ld.ReloadLyrics(o.LyricsDir, o.charsPerLine, curID); ok {
+				if ok := ld.ReloadLyrics(o.LyricsDir, curID, o.SizeX); ok {
 					break
 				}
 
@@ -273,15 +269,15 @@ func (o *Overlay) InitLyricsThread(lyricsMeasure, lyricsID <-chan int, wg *sync.
 			// Clear the text if the time since the last timer adjust is more than thrice the increment
 			// This is to stop the lyric updates if new data is missing from DMX
 			if time.Since(startTime) > 3*ld.Increments {
-				text, newIdx = []string{}, -1
+				lyric, newIdx = nil, -1
 			} else {
-				text, newIdx = ld.GetCurrentLyric(curDuration + time.Since(startTime))
+				lyric, newIdx = ld.GetCurrentLyric(curDuration + time.Since(startTime))
 			}
 
 			if newIdx != oldIdx {
 				oldIdx = newIdx
 
-				o.drawText(rgba, c, text)
+				o.drawText(rgba, c, lyric)
 				drawOutline(rgba)
 				resizeImage(rgba)
 				// log.Println("Current time", curDuration+time.Since(startTime))
