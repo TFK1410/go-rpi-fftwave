@@ -21,6 +21,7 @@ type matrixConfig struct {
 	ShowRefresh            bool               `yaml:"showRefresh,omitempty"`
 	InverseColors          bool               `yaml:"inverseColors,omitempty"`
 	HardwareMapping        string             `yaml:"hardwareMapping,omitempty"`
+	PixelMapperConfig      string             `yaml:"pixelMapperConfig,omitempty"`
 }
 
 type fftConfig struct {
@@ -143,14 +144,14 @@ var cfg Configuration = Configuration{
 func loadConfig(cfg *Configuration, path string) error {
 	f, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("Error opening the config file: %v", err)
+		return fmt.Errorf("error opening the config file: %v", err)
 	}
 	defer f.Close()
 
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(cfg)
 	if err != nil {
-		return fmt.Errorf("Error parsing the config file: %v", err)
+		return fmt.Errorf("error parsing the config file: %v", err)
 	}
 
 	createMatrixConfig(cfg)
@@ -173,4 +174,5 @@ func createMatrixConfig(cfg *Configuration) {
 	cfg.Matrix.ShowRefreshRate = cfg.IntMatrix.ShowRefresh
 	cfg.Matrix.InverseColors = cfg.IntMatrix.InverseColors
 	cfg.Matrix.HardwareMapping = cfg.IntMatrix.HardwareMapping
+	cfg.Matrix.PixelMapperConfig = cfg.IntMatrix.PixelMapperConfig
 }

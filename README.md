@@ -50,6 +50,20 @@ sudo systemctl start go-fft-display
 
 Change the service file accordingly if the configuration file is stored somewhere else
 
+## Cannot find cards
+
+If you are experiencing issues with PortAudio about it complaining: "cannot find card '0'" or something along those lines there are two things worth trying:
+Add your user and maybe also the root user to the audio group
+```sh
+sudo usermod -G audio pi
+```
+
+Create a modprobe.d file to set the usb sound card at the first index:
+```sh
+$ cat /etc/modprobe.d/alsa-base.conf
+options snd-usb-audio index=0
+```
+
 ## Ansible installation playbooks
 
 TODO

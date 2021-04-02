@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/TFK1410/go-rpi-fftwave/drawloops"
 	"github.com/TFK1410/go-rpi-fftwave/lyrics"
@@ -35,7 +36,7 @@ func main() {
 
 	// Take over kill signals
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, os.Kill)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
 	// Setup a waitGroup and quit channels for the goroutines
 	var quits []chan struct{}

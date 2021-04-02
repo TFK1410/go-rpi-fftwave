@@ -31,6 +31,8 @@ matrixConfig:
   inverseColors: false
   # name of the used GPIO mapping
   hardwareMapping: "regular"
+  # name of the used pixel mapper, can be separated with ;
+  pixelMapperConfig: "U-mapper"
 # sample rate of the recorded signal
 sampleRate: 44100
 # Config for the FFT calculation

@@ -86,7 +86,7 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 		wave.Draw(c, *dmxColor, smoothFFT, dotsValue, soundEnergyColors)
 
 		if dmxColor.A == 255 {
-			draw.Draw(c, lyrics.LyricsOverlay.Bounds(), lyrics.LyricsOverlay, image.ZP, draw.Over)
+			draw.Draw(c, lyrics.LyricsOverlay.Bounds(), lyrics.LyricsOverlay, image.Point{0, 0}, draw.Over)
 		}
 
 		// Call the main render of the canvas
