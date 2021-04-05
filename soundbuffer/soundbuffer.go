@@ -7,10 +7,10 @@ import "fmt"
 // of size N, for any amount of writes, only the last N bytes
 // are retained.
 type SoundBuffer struct {
-	data        []int16
-	size        int64
-	writeCursor int64
-	written     int64
+	data []int16
+	size int64
+	// writeCursor int64
+	written int64
 }
 
 // NewBuffer creates a new buffer of a given size. The size

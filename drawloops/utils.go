@@ -1,7 +1,6 @@
 package drawloops
 
 import (
-	"image/color"
 	"math"
 )
 
@@ -28,17 +27,41 @@ func linspace(a, b float64, n int) []float64 {
 	return out
 }
 
+func getBarHeight(val float64, heightSteps int, minVal, maxVal float64) int {
+	if val < minVal {
+		return 0
+	}
+	if val > maxVal {
+		return heightSteps
+	}
+
+	return int((val - minVal) / (maxVal - minVal) * float64(heightSteps))
+}
+
 // calculateBarriers function returns the values from the result of the fourier transform
 // that will be appropriate to a vertical bar level
-func calculateBarriers(height int, minVal, maxVal float64) []float64 {
-	space := linspace(minVal, maxVal, height)
+func calculatePaletteIndexes(height int) []byte {
+	space := linspace(0, 255, height)
+	intSpace := make([]byte, height)
 
 	// reverse the order of the elements in the slice
 	for left, right := 0, len(space)-1; left < right; left, right = left+1, right-1 {
-		space[left], space[right] = space[right], space[left]
+		intSpace[left], intSpace[right] = byte(math.Round(space[right])), byte(math.Round(space[left]))
 	}
-	return space
+	return intSpace
 }
+
+// calculateBarriers function returns the values from the result of the fourier transform
+// that will be appropriate to a vertical bar level
+// func calculateBarriers(height int, minVal, maxVal float64) []float64 {
+// 	space := linspace(minVal, maxVal, height)
+
+// 	// reverse the order of the elements in the slice
+// 	for left, right := 0, len(space)-1; left < right; left, right = left+1, right-1 {
+// 		space[left], space[right] = space[right], space[left]
+// 	}
+// 	return space
+// }
 
 // calculateDistance calculates the distance from the center in a radial pattern and maps the matrix position to the distance
 func calculateDistance(width, height int, centerX, centerY float64) [][]int {
@@ -57,26 +80,26 @@ func calculateDistance(width, height int, centerX, centerY float64) [][]int {
 }
 
 // colorGradient creates a color gradient based on the start and end colors and the number of steps
-func colorGradient(start, end color.RGBA, steps int) []color.RGBA {
-	rLinspace := linspace(float64(start.R), float64(end.R), steps)
-	gLinspace := linspace(float64(start.G), float64(end.G), steps)
-	bLinspace := linspace(float64(start.B), float64(end.B), steps)
-	aLinspace := linspace(float64(start.A), float64(end.A), steps)
+// func colorGradient(start, end color.RGBA, steps int) []color.RGBA {
+// 	rLinspace := linspace(float64(start.R), float64(end.R), steps)
+// 	gLinspace := linspace(float64(start.G), float64(end.G), steps)
+// 	bLinspace := linspace(float64(start.B), float64(end.B), steps)
+// 	aLinspace := linspace(float64(start.A), float64(end.A), steps)
 
-	out := make([]color.RGBA, steps)
-	for i := range out {
-		out[i] = color.RGBA{
-			R: uint8(rLinspace[i]),
-			G: uint8(gLinspace[i]),
-			B: uint8(bLinspace[i]),
-			A: uint8(aLinspace[i]),
-		}
-	}
+// 	out := make([]color.RGBA, steps)
+// 	for i := range out {
+// 		out[i] = color.RGBA{
+// 			R: uint8(rLinspace[i]),
+// 			G: uint8(gLinspace[i]),
+// 			B: uint8(bLinspace[i]),
+// 			A: uint8(aLinspace[i]),
+// 		}
+// 	}
 
-	// reverse the order of the elements in the slice
-	for left, right := 0, len(out)-1; left < right; left, right = left+1, right-1 {
-		out[left], out[right] = out[right], out[left]
-	}
+// 	// reverse the order of the elements in the slice
+// 	for left, right := 0, len(out)-1; left < right; left, right = left+1, right-1 {
+// 		out[left], out[right] = out[right], out[left]
+// 	}
 
-	return out
-}
+// 	return out
+// }

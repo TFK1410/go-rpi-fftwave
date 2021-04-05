@@ -3,60 +3,71 @@ package drawloops
 import (
 	"image/color"
 
+	"github.com/TFK1410/go-rpi-fftwave/dmx"
+	"github.com/TFK1410/go-rpi-fftwave/palette"
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
 // MirrorWave defines the values used for the display of the wave that are specific to this pattern type
 type MirrorWave struct {
-	dataHeight    int
-	dataWidth     int
-	colBarriers   []float64
-	heightColors  []color.RGBA
-	radiusIndexes [][]int
+	dataHeight     int
+	dataWidth      int
+	minVal, maxVal float64
+	paletteIndexes []byte
+	radiusIndexes  [][]int
 }
 
 // InitWave does the initial calculation of the reused variables in the draw loop
 func (m *MirrorWave) InitWave(dataWidth int, minVal, maxVal float64) {
 	m.dataWidth = dataWidth
 	m.dataHeight = 64
-	m.colBarriers = calculateBarriers(m.dataHeight, minVal, maxVal)
-	m.heightColors = colorGradient(color.RGBA{0, 255, 0, 255}, color.RGBA{255, 0, 0, 255}, m.dataHeight)
+	m.minVal, m.maxVal = minVal, maxVal
+	m.paletteIndexes = calculatePaletteIndexes(m.dataHeight)
 	m.radiusIndexes = calculateDistance(m.dataWidth, m.dataHeight, -0.5, float64(m.dataHeight+1)/2)
 }
 
 // Draw creates a new canvas to be later rendered on the matrix
-func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, dmxColor color.RGBA, data, dots []float64, soundEnergyHistory []color.RGBA) {
+func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots []float64, soundEnergyHistory []color.RGBA) {
 	for x, val := range data {
-		for y, bar := range m.colBarriers {
-			if val > bar {
-				if dmxColor.A > 0 {
-					// DMX Color draw
-					m.drawPixels(c, x, y, dmxColor)
+		barHeight := getBarHeight(val, m.dataHeight, m.minVal, m.maxVal)
+		dotsHeight := getBarHeight(dots[x], m.dataHeight, m.minVal, m.maxVal)
+		if (!dmxData.DMXOn || dmxData.WhiteDots) && barHeight > 0 && barHeight == dotsHeight {
+			barHeight--
+		}
+		var phaseOffset byte
+		if dmxData.DMXOn {
+			phaseOffset = dmxData.PalettePhaseOffset + byte(float64(dmxData.PaletteAngle)/255.0*float64(m.dataHeight)*float64(x))
+		}
+
+		for y := 0; y < barHeight-1; y++ {
+			if dmxData.DMXOn {
+				if dmxData.Color.A > 0 {
+					// draw constant dmx color
+					m.drawPixels(c, x, y, dmxData.Color)
 				} else {
-					// usual FFT bar draw
-					m.drawPixels(c, x, y, m.heightColors[y])
+					// draw dmx palette color
+					m.drawPixels(c, x, y, palette.Palettes[dmxData.ColorPalette][m.paletteIndexes[y]+phaseOffset])
 				}
 			} else {
-				// sound energy color draw
-				m.drawPixels(c, x, y, soundEnergyHistory[m.radiusIndexes[x][y]])
+				// draw default palette color
+				m.drawPixels(c, x, y, palette.Palettes[0][m.paletteIndexes[y]])
 			}
-			if dots[x] > bar {
-				if y == 0 || m.colBarriers[y-1] > dots[x] {
-					// white dot draw
-					m.drawPixels(c, x, y, color.RGBA{255, 255, 255, 255})
-				}
-			}
+		}
+
+		for y := barHeight; y < m.dataHeight; y++ {
+			// sound energy color draw
+			m.drawPixels(c, x, y, soundEnergyHistory[m.radiusIndexes[x][y]])
+		}
+
+		if dotsHeight > 0 && (!dmxData.DMXOn || dmxData.WhiteDots) {
+			// white dot draw
+			m.drawPixels(c, x, dotsHeight-1, color.RGBA{255, 255, 255, 255})
 		}
 	}
 }
 
 // This function will mirror out a single pixel draw to multiple fields as required
 func (m *MirrorWave) drawPixels(c *rgbmatrix.Canvas, x, y int, clr color.RGBA) {
-	if y < m.dataHeight/2 {
-		c.Set(m.dataWidth-1-x, y, clr)
-		c.Set(m.dataWidth+x, y, clr)
-	} else {
-		c.Set(3*m.dataWidth-1-x, y-m.dataHeight/2, clr)
-		c.Set(3*m.dataWidth+x, y-m.dataHeight/2, clr)
-	}
+	c.Set(m.dataWidth-1-x, m.dataHeight-1-y, clr)
+	c.Set(m.dataWidth+x, m.dataHeight-1-y, clr)
 }

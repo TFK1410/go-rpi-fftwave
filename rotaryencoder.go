@@ -11,9 +11,9 @@ import (
 
 // Set of global variables used throughout
 var (
-	roAPin            embd.DigitalPin
-	roBPin            embd.DigitalPin
-	roSPin            embd.DigitalPin
+	roDTPin           embd.DigitalPin
+	roCLKPin          embd.DigitalPin
+	roSWPin           embd.DigitalPin
 	currentRoBStatus  int
 	lastRoBStatus     int
 	currentRoSWStatus int
@@ -47,48 +47,45 @@ func initEncoder(DTpin, CLKpin, SWpin int, pressTime float64, messages chan<- En
 	longPressTime = time.Duration(pressTime * float64(time.Second))
 
 	// Init the DTPin
-	roAPin, err = embd.NewDigitalPin(DTpin)
+	roDTPin, err = embd.NewDigitalPin(DTpin)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Init the CLKpin
-	roBPin, err = embd.NewDigitalPin(CLKpin)
+	roCLKPin, err = embd.NewDigitalPin(CLKpin)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Init the SWpin
-	roSPin, err = embd.NewDigitalPin(SWpin)
+	roSWPin, err = embd.NewDigitalPin(SWpin)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Set all pin directions as inputs
-	roAPin.SetDirection(embd.In)
-	roBPin.SetDirection(embd.In)
-	roSPin.SetDirection(embd.In)
+	roDTPin.SetDirection(embd.In)
+	roCLKPin.SetDirection(embd.In)
+	roSWPin.SetDirection(embd.In)
 
 	// Set the variable below so that the first press is properly triggered
 	lastRoSWStatus = 1
 
 	// Setup callback functions for the pins
-	roSPin.Watch(embd.EdgeBoth, callClear)
-	roAPin.Watch(embd.EdgeBoth, callDeal)
+	roSWPin.Watch(embd.EdgeBoth, callClear)
+	roDTPin.Watch(embd.EdgeBoth, callDeal)
 
-	select {
-	case <-quit:
-		// Stop the thread and let the defers trigger
-		log.Println("Stopping encoder thread")
-		return
-	}
+	<-quit
+	// Stop the thread and let the defers trigger
+	log.Println("Stopping encoder thread")
 }
 
 // Called when the button is pressed
 // debouncing should be taken care of over here
 // short press and long press send two different messages back to the main function
 func callClear(pin embd.DigitalPin) {
-	currentRoSWStatus, _ = pin.Read()
+	currentRoSWStatus, _ = roSWPin.Read()
 	if currentRoSWStatus == 0 && lastRoSWStatus == 1 {
 		pressTimer = time.Now()
 	} else if currentRoSWStatus == 1 && lastRoSWStatus == 0 {
@@ -103,10 +100,10 @@ func callClear(pin embd.DigitalPin) {
 
 // Called when the encoder is rotated
 func callDeal(pin embd.DigitalPin) {
-	if pinVal, _ := pin.Read(); pinVal == 0 {
-		lastRoBStatus, _ = roBPin.Read()
+	if pinVal, _ := roDTPin.Read(); pinVal == 0 {
+		lastRoBStatus, _ = roCLKPin.Read()
 	} else {
-		currentRoBStatus, _ = roBPin.Read()
+		currentRoBStatus, _ = roCLKPin.Read()
 	}
 
 	if lastRoBStatus == 0 && currentRoBStatus == 1 {

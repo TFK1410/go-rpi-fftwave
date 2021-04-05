@@ -8,8 +8,9 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/TFK1410/go-rpi-fftwave/dmx"
 	"github.com/TFK1410/go-rpi-fftwave/drawloops"
-	"github.com/TFK1410/go-rpi-fftwave/lyrics"
+	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay"
 	"github.com/TFK1410/go-rpi-fftwave/soundbuffer"
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
@@ -71,25 +72,26 @@ func main() {
 	c := rgbmatrix.NewCanvas(m)
 	defer c.Close()
 
+	log.Println("Canvas size:", c.Bounds().Dx(), "x", c.Bounds().Dy())
+
 	// Setup lyrics thread
-	lyricsMeasures := make(chan int)
+	lyricProgress := make(chan byte)
 	lyricsID := make(chan int)
 	quits = addThread(&wg, quits)
-	o := lyrics.Overlay{
-		SizeX:       cfg.IntMatrix.Cols * 2,
-		SizeY:       cfg.IntMatrix.Rows * 2,
+	ldc := lyricsoverlay.LyricDrawContext{
+		SizeX:       c.Bounds().Dx(),
+		SizeY:       c.Bounds().Dy(),
 		RefreshRate: cfg.Lyrics.RefreshRate,
-		FontFile:    cfg.Lyrics.FontFile,
-		LyricsDir:   cfg.Lyrics.LyricsDir,
+		SqlitePath:  cfg.Lyrics.SqlitePath,
 	}
 
-	go o.InitLyricsThread(lyricsMeasures, lyricsID, &wg, quits[len(quits)-1])
+	go ldc.InitLyricsThread(lyricProgress, lyricsID, &wg, quits[len(quits)-1])
 
 	// Setup FFT smoothing thread
-	var dmxData DMXData
+	var dmxData dmx.DMXData
 	waveChan := make(chan drawloops.Wave)
 	quits = addThread(&wg, quits)
-	go initFFTSmooth(c, waveChan, fftOutChan, &dmxData.Color, &wg, quits[len(quits)-1])
+	go initFFTSmooth(c, waveChan, fftOutChan, &dmxData, &ldc, &wg, quits[len(quits)-1])
 	waveChan <- drawloops.GetFirstWave()
 
 	// Start encoder thread
@@ -101,7 +103,9 @@ func main() {
 	quits = addThread(&wg, quits)
 	pause := make(chan struct{})
 	play := make(chan struct{})
-	go initDMX(cfg.DMX.SlaveAddress, &dmxData, lyricsMeasures, lyricsID, &wg, quits[len(quits)-1], pause, play)
+	go dmx.InitDMX(cfg.DMX.SlaveAddress, &dmxData, lyricProgress, lyricsID, &wg, quits[len(quits)-1], pause, play)
+
+	log.Println("All initialized")
 
 	for {
 		select {
@@ -120,15 +124,14 @@ func main() {
 				}
 			case ButtonPress:
 				// This will select the next display wave pattern
-				waveChan <- drawloops.GetNextWave()
+				if !dmxData.DMXOn {
+					waveChan <- drawloops.GetNextWave()
+				}
 			case LongPress:
 				// This will toggle the DMX color display mode
-				// The A value of the color is also used by other goroutines to indicate whether the DMX reading is on
-				if dmxData.Color.A > 0 {
-					dmxData.Color.A = 0
+				if dmxData.DMXOn {
 					pause <- struct{}{}
 				} else {
-					dmxData.Color.A = 255
 					play <- struct{}{}
 				}
 			}
@@ -144,7 +147,7 @@ func main() {
 			ss.wg.Wait()
 			close(encMessage)
 			close(waveChan)
-			close(lyricsMeasures)
+			close(lyricProgress)
 			close(lyricsID)
 			log.Println("DONE")
 			return

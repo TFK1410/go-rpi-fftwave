@@ -4,10 +4,13 @@ import (
 	"log"
 	"math"
 	"math/cmplx"
+	"os"
 
 	"github.com/TFK1410/go-rpi-fftwave/soundbuffer"
 	"github.com/cpmech/gosl/fun/fftw"
 )
+
+const SoundEmulatorENV = "SOUND_EMULATOR"
 
 // initFFT function is a start for the goroutine handling the FFT part of the application.
 // bfz is the number of elements in a single FFT call.
@@ -29,6 +32,8 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 
 	outFFT := make([]float64, cfg.FFT.BinCount)
 
+	freq := 10
+
 	for {
 		select {
 		case <-ss.quit:
@@ -43,6 +48,17 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 
 		// Convert int16 data into complex128
 		data = r.Sound()
+
+		if os.Getenv(SoundEmulatorENV) == "1" {
+			freq = int(math.Round(float64(freq) * 1.1))
+			if freq > cfg.SampleRate {
+				freq = 10
+			}
+			for i := range data {
+				data[i] = int16(freq*i*0xffff/cfg.SampleRate - 0x7fff)
+			}
+		}
+
 		for i := range data {
 			compData[i] = complex(float64(data[i]), 0)
 		}

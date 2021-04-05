@@ -50,18 +50,25 @@ sudo systemctl start go-fft-display
 
 Change the service file accordingly if the configuration file is stored somewhere else
 
-## Cannot find cards
+## Troubleshooting
 
 If you are experiencing issues with PortAudio about it complaining: "cannot find card '0'" or something along those lines there are two things worth trying:
 Add your user and maybe also the root user to the audio group
 ```sh
-sudo usermod -G audio pi
+sudo usermod -a -G audio pi
+sudo usermod -a -G audio root
 ```
 
 Create a modprobe.d file to set the usb sound card at the first index:
 ```sh
 $ cat /etc/modprobe.d/alsa-base.conf
 options snd-usb-audio index=0
+```
+
+Also if you are at it it might be worth it to add your user to the gpio group as well. This would be used for the rotary encoder. No message will show up if this is causing some issues without being added to the group. The encoder just will not register.
+```sh
+sudo usermod -a -G gpio pi
+sudo usermod -a -G gpio root
 ```
 
 ## Ansible installation playbooks

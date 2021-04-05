@@ -9,12 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TFK1410/go-rpi-fftwave/dmx"
 	"github.com/TFK1410/go-rpi-fftwave/drawloops"
-	"github.com/TFK1410/go-rpi-fftwave/lyrics"
+	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay"
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
-func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutChan <-chan []float64, dmxColor *color.RGBA, wg *sync.WaitGroup, quit <-chan struct{}) {
+func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutChan <-chan []float64, dmxData *dmx.DMXData, ldc *lyricsoverlay.LyricDrawContext, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 
 	// Wait for the first batch of FFT data
@@ -64,6 +65,10 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 		case <-ticker:
 		}
 
+		if dmxData.DMXOn {
+			wave = drawloops.GetWaveNum(int(dmxData.DisplayMode))
+		}
+
 		// Calculate the smoothed FFT values and the sound energy
 		soundEnergy = 0
 		for i := range smoothFFT {
@@ -83,10 +88,11 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 		whiteDotCalc(dotsValue, dotsHangTime, dotsTimeLeft, smoothFFT, elapsed)
 
 		// Generate the current canvas to be displayed
-		wave.Draw(c, *dmxColor, smoothFFT, dotsValue, soundEnergyColors)
+		wave.Draw(c, *dmxData, smoothFFT, dotsValue, soundEnergyColors)
 
-		if dmxColor.A == 255 {
-			draw.Draw(c, lyrics.LyricsOverlay.Bounds(), lyrics.LyricsOverlay, image.Point{0, 0}, draw.Over)
+		if dmxData.DMXOn {
+			overlay := ldc.GetImage()
+			draw.Draw(c, overlay.Bounds(), overlay, image.Point{0, 0}, draw.Over)
 		}
 
 		// Call the main render of the canvas

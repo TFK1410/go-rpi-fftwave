@@ -65,8 +65,7 @@ type dmxConfig struct {
 
 type lyricsOverlayConfig struct {
 	RefreshRate int    `yaml:"refreshRate,omitempty"`
-	LyricsDir   string `yaml:"lyricsDir,omitempty"`
-	FontFile    string `yaml:"fontFile,omitempty"`
+	SqlitePath  string `yaml:"sqlitePath,omitempty"`
 }
 
 // Configuration is a struct holding the config of the application
@@ -136,8 +135,7 @@ var cfg Configuration = Configuration{
 	},
 	Lyrics: lyricsOverlayConfig{
 		RefreshRate: 30,
-		LyricsDir:   "/home/pi/share/go-rpi-fftwave/lyrics",
-		FontFile:    "/home/pi/share/go-rpi-fftwave/lyrics/RobotoMono-Light.ttf",
+		SqlitePath:  "./lyricsoverlay/lyrics.sqlite",
 	},
 }
 
