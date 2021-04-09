@@ -13,6 +13,7 @@ import (
 	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay"
 	"github.com/TFK1410/go-rpi-fftwave/soundbuffer"
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
+	"periph.io/x/host/v3"
 )
 
 // SoundSync struct contains variables used for the synchronization of the recording and FFT threads
@@ -38,6 +39,12 @@ func main() {
 	// Take over kill signals
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	// Load GPIO and I2C drivers
+	_, err = host.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Setup a waitGroup and quit channels for the goroutines
 	var quits []chan struct{}

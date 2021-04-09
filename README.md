@@ -69,6 +69,8 @@ Also if you are at it it might be worth it to add your user to the gpio group as
 ```sh
 sudo usermod -a -G gpio pi
 sudo usermod -a -G gpio root
+sudo usermod -a -G i2c pi
+sudo usermod -a -G i2c root
 ```
 
 ## Ansible installation playbooks

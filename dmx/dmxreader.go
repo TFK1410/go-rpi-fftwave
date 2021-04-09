@@ -6,8 +6,8 @@ import (
 	"math"
 	"sync"
 
-	"github.com/kidoman/embd"
-	_ "github.com/kidoman/embd/host/rpi"
+	"periph.io/x/conn/v3/i2c"
+	"periph.io/x/conn/v3/i2c/i2creg"
 )
 
 //DMXData is a struct containing all the data received via DMX
@@ -26,18 +26,18 @@ type DMXData struct {
 func InitDMX(slaveAddress byte, data *DMXData, lyricProgress chan<- byte, lyricID chan<- int, wg *sync.WaitGroup, quit, pause, play <-chan struct{}) {
 	defer wg.Done()
 
-	// Initialize the I2C communication using the embd package
-	err := embd.InitI2C()
+	// Initialize the I2C communication using the periph package
+	bus, err := i2creg.Open("1")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer embd.CloseI2C()
-
-	// Create a new I2CBus
-	bus := embd.NewI2CBus(1)
 	defer bus.Close()
 
+	dev := i2c.Dev{Bus: bus, Addr: uint16(slaveAddress)}
+	bytes := make([]byte, 13)
+
 	data.DMXOn = false
+	data.WhiteDots = true
 
 	// Wait for the first signal to start the goroutine
 	select {
@@ -50,8 +50,8 @@ func InitDMX(slaveAddress byte, data *DMXData, lyricProgress chan<- byte, lyricI
 	}
 
 	for {
-		// Listen in on the I2CBus with the specified slave address
-		bytes, err := bus.ReadBytes(slaveAddress, 13)
+		// Listen in on the I2CBus with the specified slave address, Tx is called with empty tx buffer to just receive
+		err = dev.Tx([]byte{}, bytes)
 		if err != nil {
 			log.Println(err)
 			continue

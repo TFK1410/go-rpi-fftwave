@@ -1,26 +1,29 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/kidoman/embd"
-	_ "github.com/kidoman/embd/host/rpi"
+	"periph.io/x/conn/v3/gpio"
+	"periph.io/x/conn/v3/gpio/gpioreg"
 )
 
 // Set of global variables used throughout
 var (
-	roDTPin           embd.DigitalPin
-	roCLKPin          embd.DigitalPin
-	roSWPin           embd.DigitalPin
-	currentRoBStatus  int
-	lastRoBStatus     int
-	currentRoSWStatus int
-	lastRoSWStatus    int
-	pressTimer        time.Time
-	longPressTime     time.Duration
-	encoderChannel    chan<- EncoderMessage
+	roDTPin            gpio.PinIO
+	roCLKPin           gpio.PinIO
+	roSWPin            gpio.PinIO
+	currentRoCLKStatus gpio.Level
+	lastRoCLKStatus    gpio.Level
+	currentRoSWStatus  gpio.Level
+	lastRoSWStatus     gpio.Level
+	pressTimer         time.Time
+	longPressTime      time.Duration
+	rotateTimer        time.Time
+	rotateDelay        time.Duration
+	encoderChannel     chan<- EncoderMessage
 )
 
 // EncoderMessage defines the kinds of messages that can originate from encoder actions
@@ -36,45 +39,60 @@ const (
 
 func initEncoder(DTpin, CLKpin, SWpin int, pressTime float64, messages chan<- EncoderMessage, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
-	// Initialize the GPIO functions using the embd package
-	err := embd.InitGPIO()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer embd.CloseGPIO()
 
 	encoderChannel = messages
 	longPressTime = time.Duration(pressTime * float64(time.Second))
 
+	// Debounce rotations, limit triggers to once every 100 microseconds
+	rotateDelay = time.Duration(100 * float64(time.Microsecond))
+
 	// Init the DTPin
-	roDTPin, err = embd.NewDigitalPin(DTpin)
-	if err != nil {
-		log.Fatalln(err)
+	roDTPin = gpioreg.ByName(fmt.Sprint(DTpin))
+	if roDTPin == nil {
+		log.Fatalln("Failed to find " + fmt.Sprint(DTpin))
 	}
 
-	// Init the CLKpin
-	roCLKPin, err = embd.NewDigitalPin(CLKpin)
-	if err != nil {
-		log.Fatalln(err)
+	// Init the CLKPin
+	roCLKPin = gpioreg.ByName(fmt.Sprint(CLKpin))
+	if roCLKPin == nil {
+		log.Fatalln("Failed to find " + fmt.Sprint(CLKpin))
 	}
 
-	// Init the SWpin
-	roSWPin, err = embd.NewDigitalPin(SWpin)
-	if err != nil {
-		log.Fatalln(err)
+	// Init the SWPin
+	roSWPin = gpioreg.ByName(fmt.Sprint(SWpin))
+	if roSWPin == nil {
+		log.Fatalln("Failed to find " + fmt.Sprint(SWpin))
 	}
 
-	// Set all pin directions as inputs
-	roDTPin.SetDirection(embd.In)
-	roCLKPin.SetDirection(embd.In)
-	roSWPin.SetDirection(embd.In)
+	// Set all as input, with an internal pull down resistor:
+	if err := roDTPin.In(gpio.PullDown, gpio.BothEdges); err != nil {
+		log.Fatalln(err)
+	}
+	if err := roCLKPin.In(gpio.PullDown, gpio.BothEdges); err != nil {
+		log.Fatalln(err)
+	}
+	if err := roSWPin.In(gpio.PullDown, gpio.BothEdges); err != nil {
+		log.Fatalln(err)
+	}
 
 	// Set the variable below so that the first press is properly triggered
-	lastRoSWStatus = 1
+	lastRoSWStatus = gpio.High
+	lastRoCLKStatus = gpio.High
 
 	// Setup callback functions for the pins
-	roSWPin.Watch(embd.EdgeBoth, callClear)
-	roDTPin.Watch(embd.EdgeBoth, callDeal)
+	go func() {
+		for {
+			roSWPin.WaitForEdge(-1)
+			callPress()
+		}
+	}()
+
+	go func() {
+		for {
+			roDTPin.WaitForEdge(-1)
+			callRotate()
+		}
+	}()
 
 	<-quit
 	// Stop the thread and let the defers trigger
@@ -84,11 +102,11 @@ func initEncoder(DTpin, CLKpin, SWpin int, pressTime float64, messages chan<- En
 // Called when the button is pressed
 // debouncing should be taken care of over here
 // short press and long press send two different messages back to the main function
-func callClear(pin embd.DigitalPin) {
-	currentRoSWStatus, _ = roSWPin.Read()
-	if currentRoSWStatus == 0 && lastRoSWStatus == 1 {
+func callPress() {
+	currentRoSWStatus = roSWPin.Read()
+	if currentRoSWStatus == gpio.Low && lastRoSWStatus == gpio.High {
 		pressTimer = time.Now()
-	} else if currentRoSWStatus == 1 && lastRoSWStatus == 0 {
+	} else if currentRoSWStatus == gpio.High && lastRoSWStatus == gpio.Low {
 		if time.Since(pressTimer) > longPressTime {
 			sendMessage(LongPress, encoderChannel)
 		} else {
@@ -99,17 +117,20 @@ func callClear(pin embd.DigitalPin) {
 }
 
 // Called when the encoder is rotated
-func callDeal(pin embd.DigitalPin) {
-	if pinVal, _ := roDTPin.Read(); pinVal == 0 {
-		lastRoBStatus, _ = roCLKPin.Read()
+func callRotate() {
+	if pinVal := roDTPin.Read(); pinVal == gpio.High {
+		lastRoCLKStatus = roCLKPin.Read()
 	} else {
-		currentRoBStatus, _ = roCLKPin.Read()
+		currentRoCLKStatus = roCLKPin.Read()
+		rotateTimer = time.Now()
 	}
 
-	if lastRoBStatus == 0 && currentRoBStatus == 1 {
-		sendMessage(BrightnessUp, encoderChannel)
-	} else if lastRoBStatus == 1 && currentRoBStatus == 0 {
-		sendMessage(BrightnessDown, encoderChannel)
+	if time.Since(rotateTimer) > rotateDelay {
+		if lastRoCLKStatus == gpio.High && currentRoCLKStatus == gpio.Low {
+			sendMessage(BrightnessUp, encoderChannel)
+		} else if lastRoCLKStatus == gpio.Low && currentRoCLKStatus == gpio.High {
+			sendMessage(BrightnessDown, encoderChannel)
+		}
 	}
 }
 
