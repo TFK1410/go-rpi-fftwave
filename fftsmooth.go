@@ -3,7 +3,6 @@ package main
 import (
 	"image"
 	"image/color"
-	"image/draw"
 	"log"
 	"math"
 	"sync"
@@ -92,13 +91,32 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 
 		if dmxData.DMXOn {
 			overlay := ldc.GetImage()
-			draw.Draw(c, overlay.Bounds(), overlay, image.Point{0, 0}, draw.Over)
+			// overlay := image.NewRGBA(image.Rect(0, 0, c.Bounds().Dx(), c.Bounds().Dy()))
+			// draw.Draw(overlay, overlay.Bounds(), &image.Uniform{color.White}, image.Point{0, 0}, draw.Src)
+
+			// starttest := time.Now()
+			overlayImage(c, overlay)
+			// draw.Draw(c, overlay.Bounds(), overlay, image.Point{0, 0}, draw.Over)
+			// log.Println("Elapsed: ", time.Since(starttest))
 		}
 
 		// Call the main render of the canvas
 		c.Render()
 
 		// fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergy)
+	}
+}
+
+func overlayImage(c *rgbmatrix.Canvas, overlay *image.RGBA) {
+	bounds := overlay.Bounds()
+	sizeX, sizeY := bounds.Dx(), bounds.Dy()
+
+	for x := 0; x < sizeX; x++ {
+		for y := 0; y < sizeY; y++ {
+			if overlay.Pix[overlay.PixOffset(x, y)+3] > 0 {
+				c.Set(x, y, overlay.At(x, y))
+			}
+		}
 	}
 }
 
