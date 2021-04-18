@@ -59,14 +59,20 @@ func (ldc *LyricDrawContext) drawText(l *Lyric, progress byte) {
 	ldc.clear()
 
 	textToDraw, charRemainder := l.getPartialText(progress)
+	if len(textToDraw) == 0 {
+		return
+	}
 
-	var lastchar rune
 	var x, y int
+	var lastchar rune
 	for i, s := range textToDraw {
+		lastchar = rune(' ')
 		x = l.LinePositions[i].X
 		y = l.LinePositions[i].Y
 		x = l.DrawString(ldc.img, x, y, s, l.Color)
-		lastchar = rune(s[len(s)-1])
+		if len(s) > 0 {
+			lastchar = rune(s[len(s)-1])
+		}
 	}
 
 	if charRemainder < 100 {
@@ -78,6 +84,9 @@ func (ldc *LyricDrawContext) drawTextRealign(l *Lyric, progress byte) {
 	ldc.clear()
 
 	textToDraw, charRemainder := l.getPartialText(progress)
+	if len(textToDraw) == 0 {
+		return
+	}
 
 	textHeight := float64(len(textToDraw)*(l.FontSize+spacing) - spacing)
 	var pt Position
@@ -86,6 +95,7 @@ func (ldc *LyricDrawContext) drawTextRealign(l *Lyric, progress byte) {
 	var err error
 	var lastchar rune
 	for i, s := range textToDraw {
+		lastchar = rune(' ')
 		var textWidth int
 		if i == len(textToDraw)-1 {
 			if len(s) > 0 {
@@ -262,8 +272,8 @@ func (ldc *LyricDrawContext) InitLyricsThread(lyricProgress <-chan byte, lyricsI
 			// }
 
 			if curID > 0 && curProgress > 0 {
-				if oldID != curID || oldProgress != curProgress {
-					if l.AlignVisible {
+				if (oldID != curID || oldProgress != curProgress) && curProgress > 0 {
+					if l.AlignVisible || l.WordByWord {
 						ldc.drawTextRealign(l, curProgress)
 					} else {
 						ldc.drawText(l, curProgress)

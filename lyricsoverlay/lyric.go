@@ -179,7 +179,7 @@ func (l *Lyric) getPartialText(progress byte) ([]string, int) {
 		if l.SmoothPartial == 2 {
 			lineRemainder++
 		}
-		return []string{l.Text[lineCount-1][0:lineRemainder]}, cutChar
+		return []string{l.Text[lineCount-1]}, cutChar
 	}
 
 	textOut := make([]string, lineCount)
@@ -213,10 +213,9 @@ func (l *Lyric) getPartialText(progress byte) ([]string, int) {
 }
 
 func (l *Lyric) divideLyric(lyric string, sizeX int) {
-	var line string
 	var lines []string
 
-	lyriclines := strings.Split(lyric, "\n")
+	lyriclines := strings.Split(lyric, "\r\n")
 	if l.WordByWord {
 		for _, lyricline := range lyriclines {
 			words := strings.Fields(lyricline)
@@ -230,6 +229,7 @@ func (l *Lyric) divideLyric(lyric string, sizeX int) {
 
 	for _, lyricline := range lyriclines {
 		words := strings.Split(lyricline, " ")
+		var line string
 		for _, word := range words {
 			line += word + " "
 
