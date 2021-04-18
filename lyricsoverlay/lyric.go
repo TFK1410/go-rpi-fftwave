@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay/fonts/pixelmix10"
-	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay/fonts/pixelmix13"
+	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay/fonts/pixelmix12"
 	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay/fonts/pixelmix16"
+	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay/fonts/pixelmix24"
+	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay/fonts/pixelmix32"
 	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay/fonts/pixelmix8"
 
 	"github.com/pbnjay/pixfont"
@@ -35,6 +37,9 @@ type Lyric struct {
 	RandomPosition bool `json:"randomposition,omitempty"`
 	LinePositions  []Position
 	RandomOffset   Position
+	// in this mode only a single word is being displayed based on the progress
+	// this ignores the RandomPosition parameter
+	WordByWord bool `json:"wordbyword,omitempty"`
 	// this defines the amount of text glitching
 	// https://github.com/TotallyNotChase/glitch-this
 	// 0 by default no glitching and level goes up to 255
@@ -42,10 +47,12 @@ type Lyric struct {
 	// boolean flag that defines if the glitch should also offset the color
 	GlitchColor bool `json:"glitchcolor,omitempty"`
 	// font size:
-	// small  - 8pt by default
-	// medium - 10pt
-	// large  - 13pt
-	// huge   - 16pt
+	// small    - 8pt
+	// medium   - 10pt by default
+	// large    - 12pt
+	// huge     - 16pt
+	// giant    - 24pt
+	// enormous - 32pt
 	Size     string `json:"size,omitempty"`
 	FontSize int
 	// if this is not empty then below the primary text a secondary text will be displayed
@@ -73,6 +80,7 @@ func NewLyric() *Lyric {
 	l.Align = 0
 	l.AlignVisible = false
 	l.RandomPosition = false
+	l.WordByWord = false
 	l.Glitch = 0
 	l.Size = "small"
 	l.FontSize = 8
@@ -85,10 +93,14 @@ func (l *Lyric) getStringLength(s string) int {
 		return pixelmix8.Font.MeasureString(s)
 	case 10:
 		return pixelmix10.Font.MeasureString(s)
-	case 13:
-		return pixelmix13.Font.MeasureString(s)
+	case 12:
+		return pixelmix12.Font.MeasureString(s)
 	case 16:
 		return pixelmix16.Font.MeasureString(s)
+	case 24:
+		return pixelmix24.Font.MeasureString(s)
+	case 32:
+		return pixelmix32.Font.MeasureString(s)
 	}
 }
 
@@ -99,10 +111,14 @@ func (l *Lyric) getRuneLength(r rune) int {
 		_, sz = pixelmix8.Font.MeasureRune(r)
 	case 10:
 		_, sz = pixelmix10.Font.MeasureRune(r)
-	case 13:
-		_, sz = pixelmix13.Font.MeasureRune(r)
+	case 12:
+		_, sz = pixelmix12.Font.MeasureRune(r)
 	case 16:
 		_, sz = pixelmix16.Font.MeasureRune(r)
+	case 24:
+		_, sz = pixelmix24.Font.MeasureRune(r)
+	case 32:
+		_, sz = pixelmix32.Font.MeasureRune(r)
 	}
 	return sz
 }
@@ -113,16 +129,25 @@ func (l *Lyric) DrawString(dr pixfont.Drawable, x, y int, s string, clr color.Co
 		return pixelmix8.Font.DrawString(dr, x, y, s, clr)
 	case 10:
 		return pixelmix10.Font.DrawString(dr, x, y, s, clr)
-	case 13:
-		return pixelmix13.Font.DrawString(dr, x, y, s, clr)
+	case 12:
+		return pixelmix12.Font.DrawString(dr, x, y, s, clr)
 	case 16:
 		return pixelmix16.Font.DrawString(dr, x, y, s, clr)
+	case 24:
+		return pixelmix24.Font.DrawString(dr, x, y, s, clr)
+	case 32:
+		return pixelmix32.Font.DrawString(dr, x, y, s, clr)
 	}
 }
 
 func (l *Lyric) getPartialText(progress byte) ([]string, int) {
 	if progress == 255 {
-		return l.Text, 100
+		if !l.WordByWord {
+			return l.Text, 100
+		}
+		if len(l.Text) > 0 {
+			return []string{l.Text[len(l.Text)-1]}, 100
+		}
 	} else if progress == 0 {
 		return []string{}, 100
 	}
@@ -149,6 +174,14 @@ func (l *Lyric) getPartialText(progress byte) ([]string, int) {
 			break
 		}
 	}
+
+	if l.WordByWord {
+		if l.SmoothPartial == 2 {
+			lineRemainder++
+		}
+		return []string{l.Text[lineCount-1][0:lineRemainder]}, cutChar
+	}
+
 	textOut := make([]string, lineCount)
 	for i := 0; i < lineCount-1; i++ {
 		textOut[i] = l.Text[i]
@@ -184,6 +217,17 @@ func (l *Lyric) divideLyric(lyric string, sizeX int) {
 	var lines []string
 
 	lyriclines := strings.Split(lyric, "\n")
+	if l.WordByWord {
+		for _, lyricline := range lyriclines {
+			words := strings.Fields(lyricline)
+			if len(words) > 0 {
+				lines = append(lines, words...)
+			}
+		}
+		l.Text = lines
+		return
+	}
+
 	for _, lyricline := range lyriclines {
 		words := strings.Split(lyricline, " ")
 		for _, word := range words {
@@ -287,14 +331,25 @@ func (l *Lyric) parseLyricData(ID int, text string, parameters string, ldc *Lyri
 	l.ID = ID
 	json.Unmarshal([]byte(parameters), &l)
 
-	if l.Size == "medium" {
+	switch l.Size {
+	case "small":
+		l.FontSize = 8
+	case "medium":
 		l.FontSize = 10
-	} else if l.Size == "large" {
-		l.FontSize = 13
-	} else if l.Size == "huge" {
+	case "large":
+		l.FontSize = 12
+	case "huge":
 		l.FontSize = 16
+	case "giant":
+		l.FontSize = 24
+	case "enormous":
+		l.FontSize = 32
+	default:
+		l.FontSize = 10
 	}
 
 	l.divideLyric(text, ldc.SizeX)
-	l.initialPositions(ldc)
+	if !l.WordByWord {
+		l.initialPositions(ldc)
+	}
 }

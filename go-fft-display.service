@@ -3,8 +3,11 @@ Description=FFT Display control service
 
 [Service]
 User=pi
+Type=idle
 ExecStart=sudo /home/pi/go/bin/go-rpi-fftwave -c /home/pi/config.yml
 StandardOutput=null
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target

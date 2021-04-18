@@ -228,19 +228,29 @@ func (ldc *LyricDrawContext) InitLyricsThread(lyricProgress <-chan byte, lyricsI
 			// A new song ID is received
 			// If it is equal to 0 that means that no song is selected right now
 			// The goroutine will be paused until a good ID with an existing .lrc file is found
-			for {
-				if l = ldc.getLyric(curID); l != nil {
-					curProgress = 0
-					break
-				}
+			curProgress = 0
 
-				select {
-				case curID = <-lyricsID:
-				case <-quit:
-					log.Println("Stopping lyrics thread")
-					return
-				}
+			if curID == 0 {
+				continue
 			}
+
+			if l = ldc.getLyric(curID); l == nil {
+				curID = 0
+			}
+
+//			for {
+//				if l = ldc.getLyric(curID); l != nil {
+//					curProgress = 0
+//					break
+//				}
+//
+//				select {
+//				case curID = <-lyricsID:
+//				case <-quit:
+//					log.Println("Stopping lyrics thread")
+//					return
+//				}
+//			}
 		case curProgress = <-lyricProgress:
 		case <-ticker.C:
 			// Clear the text if the time since the last timer adjust is more than thrice the increment
