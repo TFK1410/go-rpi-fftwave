@@ -19,11 +19,10 @@ type DMXData struct {
 	PaletteAngle       byte
 	PalettePhaseOffset byte
 	Color              color.RGBA
-	LyricID            int
-	LyricProgress      byte
+	LyricsDMXInfo      uint
 }
 
-func InitDMX(slaveAddress byte, data *DMXData, lyricProgress chan<- byte, lyricID chan<- int, wg *sync.WaitGroup, quit, pause, play <-chan struct{}) {
+func InitDMX(slaveAddress byte, data *DMXData, lyricsDMXInfo chan<- uint, wg *sync.WaitGroup, quit, pause, play <-chan struct{}) {
 	defer wg.Done()
 
 	// Initialize the I2C communication using the periph package
@@ -78,23 +77,14 @@ func InitDMX(slaveAddress byte, data *DMXData, lyricProgress chan<- byte, lyricI
 				data.Color.A = 0
 			}
 
-			incomingLyricID := int(bytes[9])<<16 + int(bytes[10])<<8 + int(bytes[11])
-			incomingLyricProgress := bytes[12]
+			// 3 bytes lyricID + 1 byte lyricProgress
+			incomingLyricData := uint(bytes[9])<<24 + uint(bytes[10])<<16 + uint(bytes[11])<<8 + uint(bytes[12])
 
-			if incomingLyricID != data.LyricID {
-				data.LyricID = incomingLyricID
+			if incomingLyricData != data.LyricsDMXInfo {
+				data.LyricsDMXInfo = incomingLyricData
 				// Send the new data to the lyrics goroutine without blocking
 				select {
-				case lyricID <- incomingLyricID:
-				default:
-				}
-			}
-
-			if incomingLyricProgress != data.LyricProgress {
-				data.LyricProgress = incomingLyricProgress
-				// Send the new data to the lyrics goroutine without blocking
-				select {
-				case lyricProgress <- incomingLyricProgress:
+				case lyricsDMXInfo <- incomingLyricData:
 				default:
 				}
 			}

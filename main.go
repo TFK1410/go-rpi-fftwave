@@ -82,8 +82,7 @@ func main() {
 	log.Println("Canvas size:", c.Bounds().Dx(), "x", c.Bounds().Dy())
 
 	// Setup lyrics thread
-	lyricProgress := make(chan byte)
-	lyricsID := make(chan int)
+	lyricsDMXInfo := make(chan uint)
 	quits = addThread(&wg, quits)
 	ldc := lyricsoverlay.LyricDrawContext{
 		SizeX:       c.Bounds().Dx(),
@@ -92,7 +91,7 @@ func main() {
 		SqlitePath:  cfg.Lyrics.SqlitePath,
 	}
 
-	go ldc.InitLyricsThread(lyricProgress, lyricsID, &wg, quits[len(quits)-1])
+	go ldc.InitLyricsThread(lyricsDMXInfo, &wg, quits[len(quits)-1])
 
 	// Setup FFT smoothing thread
 	var dmxData dmx.DMXData
@@ -110,7 +109,7 @@ func main() {
 	quits = addThread(&wg, quits)
 	pause := make(chan struct{})
 	play := make(chan struct{})
-	go dmx.InitDMX(cfg.DMX.SlaveAddress, &dmxData, lyricProgress, lyricsID, &wg, quits[len(quits)-1], pause, play)
+	go dmx.InitDMX(cfg.DMX.SlaveAddress, &dmxData, lyricsDMXInfo, &wg, quits[len(quits)-1], pause, play)
 
 	log.Println("All initialized")
 
@@ -154,8 +153,7 @@ func main() {
 			ss.wg.Wait()
 			close(encMessage)
 			close(waveChan)
-			close(lyricProgress)
-			close(lyricsID)
+			close(lyricsDMXInfo)
 			log.Println("DONE")
 			return
 		}

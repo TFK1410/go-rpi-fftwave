@@ -3,6 +3,7 @@ package lyricsoverlay
 import (
 	"database/sql"
 	"image"
+	"image/color"
 	"image/draw"
 	"log"
 	"math"
@@ -145,74 +146,74 @@ func (ldc *LyricDrawContext) drawTextRealign(l *Lyric, progress byte) {
 	}
 }
 
-// func (ldc *LyricDrawContext) drawOutline() {
-// 	bounds := ldc.img.Bounds()
+func (ldc *LyricDrawContext) drawOutline() {
+	bounds := ldc.img.Bounds()
 
-// 	for x := 0; x < bounds.Max.X; x++ {
-// 		for y := 0; y < bounds.Max.Y; y++ {
-// 			r, g, b, a := ldc.img.At(x, y).RGBA()
-// 			if r > 0 && g > 0 && b > 0 && a > 0 {
-// 				ldc.img.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), 0xff})
+	for x := 0; x < bounds.Max.X; x++ {
+		for y := 0; y < bounds.Max.Y; y++ {
+			r, g, b, a := ldc.img.At(x, y).RGBA()
+			if r > 0 && g > 0 && b > 0 && a > 0 {
+				ldc.img.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), 0xff})
 
-// 				if x > 0 {
-// 					_, _, _, a = ldc.img.At(x-1, y).RGBA()
-// 					if a == 0 {
-// 						ldc.img.Set(x-1, y, color.Black)
-// 					}
-// 				}
-// 				if x < bounds.Max.X-1 {
-// 					_, _, _, a = ldc.img.At(x+1, y).RGBA()
-// 					if a == 0 {
-// 						ldc.img.Set(x+1, y, color.Black)
-// 					}
-// 				}
-// 				if y > 0 {
-// 					_, _, _, a = ldc.img.At(x, y-1).RGBA()
-// 					if a == 0 {
-// 						ldc.img.Set(x, y-1, color.Black)
-// 					}
-// 				}
-// 				if y < bounds.Max.Y-1 {
-// 					_, _, _, a = ldc.img.At(x, y+1).RGBA()
-// 					if a == 0 {
-// 						ldc.img.Set(x, y+1, color.Black)
-// 					}
-// 				}
+				if x > 0 {
+					_, _, _, a = ldc.img.At(x-1, y).RGBA()
+					if a == 0 {
+						ldc.img.Set(x-1, y, color.Black)
+					}
+				}
+				if x < bounds.Max.X-1 {
+					_, _, _, a = ldc.img.At(x+1, y).RGBA()
+					if a == 0 {
+						ldc.img.Set(x+1, y, color.Black)
+					}
+				}
+				if y > 0 {
+					_, _, _, a = ldc.img.At(x, y-1).RGBA()
+					if a == 0 {
+						ldc.img.Set(x, y-1, color.Black)
+					}
+				}
+				if y < bounds.Max.Y-1 {
+					_, _, _, a = ldc.img.At(x, y+1).RGBA()
+					if a == 0 {
+						ldc.img.Set(x, y+1, color.Black)
+					}
+				}
 
-// 				if x > 0 && y > 0 {
-// 					_, _, _, a = ldc.img.At(x-1, y-1).RGBA()
-// 					if a == 0 {
-// 						ldc.img.Set(x-1, y-1, color.Black)
-// 					}
-// 				}
-// 				if x > 0 && y < bounds.Max.Y-1 {
-// 					_, _, _, a = ldc.img.At(x-1, y+1).RGBA()
-// 					if a == 0 {
-// 						ldc.img.Set(x-1, y+1, color.Black)
-// 					}
-// 				}
-// 				if x < bounds.Max.X-1 && y > 0 {
-// 					_, _, _, a = ldc.img.At(x+1, y-1).RGBA()
-// 					if a == 0 {
-// 						ldc.img.Set(x+1, y-1, color.Black)
-// 					}
-// 				}
-// 				if x < bounds.Max.X-1 && y < bounds.Max.Y-1 {
-// 					_, _, _, a = ldc.img.At(x+1, y+1).RGBA()
-// 					if a == 0 {
-// 						ldc.img.Set(x+1, y+1, color.Black)
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-// }
+				if x > 0 && y > 0 {
+					_, _, _, a = ldc.img.At(x-1, y-1).RGBA()
+					if a == 0 {
+						ldc.img.Set(x-1, y-1, color.Black)
+					}
+				}
+				if x > 0 && y < bounds.Max.Y-1 {
+					_, _, _, a = ldc.img.At(x-1, y+1).RGBA()
+					if a == 0 {
+						ldc.img.Set(x-1, y+1, color.Black)
+					}
+				}
+				if x < bounds.Max.X-1 && y > 0 {
+					_, _, _, a = ldc.img.At(x+1, y-1).RGBA()
+					if a == 0 {
+						ldc.img.Set(x+1, y-1, color.Black)
+					}
+				}
+				if x < bounds.Max.X-1 && y < bounds.Max.Y-1 {
+					_, _, _, a = ldc.img.At(x+1, y+1).RGBA()
+					if a == 0 {
+						ldc.img.Set(x+1, y+1, color.Black)
+					}
+				}
+			}
+		}
+	}
+}
 
 func (ldc *LyricDrawContext) GetImage() *image.RGBA {
 	return ldc.img
 }
 
-func (ldc *LyricDrawContext) InitLyricsThread(lyricProgress <-chan byte, lyricsID <-chan int, wg *sync.WaitGroup, quit <-chan struct{}) {
+func (ldc *LyricDrawContext) InitLyricsThread(lyricsDMXInfo <-chan uint, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 	ldc.img = image.NewRGBA(image.Rect(0, 0, ldc.SizeX, ldc.SizeY))
 
@@ -227,52 +228,39 @@ func (ldc *LyricDrawContext) InitLyricsThread(lyricProgress <-chan byte, lyricsI
 	ticker := time.NewTicker(time.Second / time.Duration(ldc.RefreshRate))
 	// startTime := time.Now()
 
-	var curID, oldID int
+	var curData uint
 	// var curDuration time.Duration
 	var l *Lyric
-	var curProgress, oldProgress byte
+	var curProgress byte
+	var curID, oldID int
+	update := false
 
 	for {
 		select {
-		case curID = <-lyricsID:
+		case curData = <-lyricsDMXInfo:
 			// A new song ID is received
 			// If it is equal to 0 that means that no song is selected right now
 			// The goroutine will be paused until a good ID with an existing .lrc file is found
-			curProgress = 0
+			curProgress = byte(curData & 0xFF)
+			curID = int(curData & 0xFFFFFF00 >> 8)
+			update = true
 
 			if curID == 0 {
 				continue
 			}
 
-			if l = ldc.getLyric(curID); l == nil {
-				curID = 0
+			if oldID != curID {
+				l = ldc.getLyric(curID)
+				if l == nil {
+					curID = 0
+				} else {
+					oldID = curID
+				}
 			}
-
-//			for {
-//				if l = ldc.getLyric(curID); l != nil {
-//					curProgress = 0
-//					break
-//				}
-//
-//				select {
-//				case curID = <-lyricsID:
-//				case <-quit:
-//					log.Println("Stopping lyrics thread")
-//					return
-//				}
-//			}
-		case curProgress = <-lyricProgress:
 		case <-ticker.C:
-			// Clear the text if the time since the last timer adjust is more than thrice the increment
-			// This is to stop the lyric updates if new data is missing from DMX
-			// if time.Since(startTime) > 3*ld.Increments {
-			// 	lyric, newIdx = nil, -1
-			// } else {
-			// 	lyric, newIdx = ld.GetCurrentLyric(curDuration + time.Since(startTime))
-			// }
+			if update {
+				if curID > 0 && curProgress > 0 {
 
-			if curID > 0 && curProgress > 0 {
-				if (oldID != curID || oldProgress != curProgress) && curProgress > 0 {
 					if l.AlignVisible || l.WordByWord {
 						ldc.drawTextRealign(l, curProgress)
 					} else {
@@ -281,12 +269,12 @@ func (ldc *LyricDrawContext) InitLyricsThread(lyricProgress <-chan byte, lyricsI
 					if l.Glitch >= 0.1 {
 						glitchImage(ldc.img, l.Glitch, l.GlitchColor)
 					}
+					ldc.drawOutline()
 
-					oldID = curID
-					oldProgress = curProgress
+				} else {
+					ldc.clear()
 				}
-			} else {
-				ldc.clear()
+				update = false
 			}
 		case <-quit:
 			log.Println("Stopping lyrics thread")
