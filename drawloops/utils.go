@@ -103,3 +103,13 @@ func calculateDistance(width, height int, centerX, centerY float64) [][]int {
 
 // 	return out
 // }
+
+func getPaletteOffsetWrap(offset int) byte {
+	rotations := offset / 256
+	byteCutoff := byte(offset)
+	if rotations%2 == 0 {
+		return byteCutoff
+	} else {
+		return 255 - byteCutoff
+	}
+}

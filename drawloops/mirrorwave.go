@@ -34,9 +34,9 @@ func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots [
 		if (!dmxData.DMXOn || dmxData.WhiteDots) && barHeight > 0 && barHeight == dotsHeight {
 			barHeight--
 		}
-		var phaseOffset byte
+		var phaseOffset int
 		if dmxData.DMXOn {
-			phaseOffset = dmxData.PalettePhaseOffset + byte(float64(dmxData.PaletteAngle)/255.0*float64(m.dataHeight)*float64(x))
+			phaseOffset = int(dmxData.PalettePhaseOffset) + int(float64(dmxData.PaletteAngle)/255.0*float64(m.dataHeight)*float64(x))
 		}
 
 		for y := 0; y < barHeight-1; y++ {
@@ -46,7 +46,7 @@ func (m *MirrorWave) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots [
 					m.drawPixels(c, x, y, dmxData.Color)
 				} else {
 					// draw dmx palette color
-					m.drawPixels(c, x, y, palette.Palettes[dmxData.ColorPalette][m.paletteIndexes[y]+phaseOffset])
+					m.drawPixels(c, x, y, palette.Palettes[dmxData.ColorPalette][getPaletteOffsetWrap(int(m.paletteIndexes[y])+phaseOffset)])
 				}
 			} else {
 				// draw default palette color
