@@ -48,6 +48,8 @@ func InitDMX(slaveAddress byte, data *DMXData, lyricsDMXInfo chan<- uint, wg *sy
 		return
 	}
 
+	var incomingLyricData uint
+
 	for {
 		// Listen in on the I2CBus with the specified slave address, Tx is called with empty tx buffer to just receive
 		err = dev.Tx([]byte{}, bytes)
@@ -78,7 +80,10 @@ func InitDMX(slaveAddress byte, data *DMXData, lyricsDMXInfo chan<- uint, wg *sy
 			}
 
 			// 3 bytes lyricID + 1 byte lyricProgress
-			incomingLyricData := uint(bytes[9])<<24 + uint(bytes[10])<<16 + uint(bytes[11])<<8 + uint(bytes[12])
+			// if checks if the bytes from the MSB and below are not zeros
+			if !((bytes[9] > 0 && bytes[10] == 0 && bytes[11] == 0) || (bytes[10] > 0 && bytes[11] == 0)) {
+				incomingLyricData = uint(bytes[9])<<24 + uint(bytes[10])<<16 + uint(bytes[11])<<8 + uint(bytes[12])
+			}
 
 			if incomingLyricData != data.LyricsDMXInfo {
 				data.LyricsDMXInfo = incomingLyricData

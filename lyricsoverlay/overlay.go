@@ -152,7 +152,7 @@ func (ldc *LyricDrawContext) drawOutline() {
 	for x := 0; x < bounds.Max.X; x++ {
 		for y := 0; y < bounds.Max.Y; y++ {
 			r, g, b, a := ldc.img.At(x, y).RGBA()
-			if r > 0 && g > 0 && b > 0 && a > 0 {
+			if r > 0 || g > 0 || b > 0 {
 				ldc.img.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), 0xff})
 
 				if x > 0 {
@@ -259,7 +259,7 @@ func (ldc *LyricDrawContext) InitLyricsThread(lyricsDMXInfo <-chan uint, wg *syn
 			}
 		case <-ticker.C:
 			if update {
-				if curID > 0 && curProgress > 0 {
+				if l != nil && curProgress > 0 {
 
 					if l.AlignVisible || l.WordByWord {
 						ldc.drawTextRealign(l, curProgress)

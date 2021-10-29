@@ -45,8 +45,12 @@ func calculatePaletteIndexes(height int) []byte {
 	intSpace := make([]byte, height)
 
 	// reverse the order of the elements in the slice
-	for left, right := 0, len(space)-1; left < right; left, right = left+1, right-1 {
-		intSpace[left], intSpace[right] = byte(math.Round(space[right])), byte(math.Round(space[left]))
+	//for left, right := 0, len(space)-1; left < right; left, right = left+1, right-1 {
+	//	intSpace[left], intSpace[right] = byte(math.Round(space[right])), byte(math.Round(space[left]))
+	//}
+	// round the values to a byte
+	for i := 0; i < len(space); i++ {
+		intSpace[i] = byte(math.Round(space[i]))
 	}
 	return intSpace
 }

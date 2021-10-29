@@ -25,7 +25,7 @@ func (ldc *LyricDrawContext) getLyric(id int) *Lyric {
 	row := ldc.db.QueryRow(sqlStatement, id)
 	switch err := row.Scan(&lyricid, &trackid, &lyric, &attributes); err {
 	case sql.ErrNoRows:
-		log.Println("No rows were returned!")
+		log.Println("No rows were returned!", id)
 	case nil:
 		l := NewLyric()
 		l.parseLyricData(lyricid, lyric, attributes, ldc)
