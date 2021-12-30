@@ -14,7 +14,6 @@ type QuadWaveSideways struct {
 	dataWidth      int
 	minVal, maxVal float64
 	paletteIndexes []byte
-	radiusIndexes  [][]int
 }
 
 // InitWave does the initial calculation of the reused variables in the draw loop
@@ -23,11 +22,10 @@ func (m *QuadWaveSideways) InitWave(dataWidth int, minVal, maxVal float64) {
 	m.dataHeight = 64
 	m.minVal, m.maxVal = minVal, maxVal
 	m.paletteIndexes = calculatePaletteIndexes(m.dataHeight)
-	m.radiusIndexes = calculateDistance(m.dataWidth, m.dataHeight, -0.5, float64(m.dataHeight)+0.5)
 }
 
 // Draw creates a new canvas to be later rendered on the matrix
-func (m *QuadWaveSideways) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots []float64, soundEnergyHistory []color.RGBA) {
+func (m *QuadWaveSideways) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots []float64) {
 	var avg, avgDots float64
 	for x, val := range data {
 		if x%2 == 0 {
@@ -64,8 +62,8 @@ func (m *QuadWaveSideways) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, 
 		}
 
 		for y := barHeight; y < m.dataHeight; y++ {
-			// sound energy color draw
-			m.drawPixels(c, x, y, soundEnergyHistory[m.radiusIndexes[x][y]])
+			// blackout the rest
+			m.drawPixels(c, x, y, color.RGBA{0, 0, 0, 0})
 		}
 
 		if dotsHeight > 0 && (!dmxData.DMXOn || dmxData.WhiteDots) {

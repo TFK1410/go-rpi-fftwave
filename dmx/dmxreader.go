@@ -14,6 +14,7 @@ import (
 type DMXData struct {
 	DMXOn              bool
 	DisplayMode        byte
+	BackgroundMode     byte
 	WhiteDots          bool
 	ColorPalette       byte
 	PaletteAngle       byte
@@ -62,7 +63,8 @@ func InitDMX(slaveAddress byte, data *DMXData, lyricsDMXInfo chan<- uint, wg *sy
 		// this is closely coupled with the Arduino sketch that's bundled with this code
 		if len(bytes) > 0 && bytes[0] > 0 {
 
-			data.DisplayMode = bytes[1] & 0x7f
+			data.DisplayMode = bytes[1] & 0x7            //xxxxx000
+			data.BackgroundMode = (bytes[1] & 0x70) >> 5 //x000xxxx
 			data.WhiteDots = (bytes[1] & 0x80) == 0
 			data.ColorPalette = bytes[2] >> 2
 			data.PaletteAngle = bytes[3]

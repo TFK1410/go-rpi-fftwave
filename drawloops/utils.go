@@ -67,21 +67,21 @@ func calculatePaletteIndexes(height int) []byte {
 // 	return space
 // }
 
-// calculateDistance calculates the distance from the center in a radial pattern and maps the matrix position to the distance
-func calculateDistance(width, height int, centerX, centerY float64) [][]int {
-	var xx, yy, dist float64
-	out := make([][]int, width)
-	for x := 0; x < width; x++ {
-		out[x] = make([]int, height)
-		for y := 0; y < height; y++ {
-			xx = math.Abs(float64(x) - centerX)
-			yy = math.Abs(float64(y) - centerY)
-			dist = math.Round(math.Hypot(xx, yy))
-			out[x][y] = int(dist)
-		}
-	}
-	return out
-}
+// // calculateDistance calculates the distance from the center in a radial pattern and maps the matrix position to the distance
+// func calculateDistance(width, height int, centerX, centerY float64) [][]int {
+// 	var xx, yy, dist float64
+// 	out := make([][]int, width)
+// 	for x := 0; x < width; x++ {
+// 		out[x] = make([]int, height)
+// 		for y := 0; y < height; y++ {
+// 			xx = math.Abs(float64(x) - centerX)
+// 			yy = math.Abs(float64(y) - centerY)
+// 			dist = math.Round(math.Hypot(xx, yy))
+// 			out[x][y] = int(dist)
+// 		}
+// 	}
+// 	return out
+// }
 
 // colorGradient creates a color gradient based on the start and end colors and the number of steps
 // func colorGradient(start, end color.RGBA, steps int) []color.RGBA {

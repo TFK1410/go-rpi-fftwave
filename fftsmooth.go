@@ -2,12 +2,11 @@ package main
 
 import (
 	"image"
-	"image/color"
 	"log"
-	"math"
 	"sync"
 	"time"
 
+	"github.com/TFK1410/go-rpi-fftwave/backgroundloops"
 	"github.com/TFK1410/go-rpi-fftwave/dmx"
 	"github.com/TFK1410/go-rpi-fftwave/drawloops"
 	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay"
@@ -38,14 +37,12 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 	var start time.Time
 	var elapsed time.Duration
 
-	// Setup the sound energy buffers and timers
-	soundEnergyColors := make([]color.RGBA, cfg.SoundEnergy.HistoryCount)
-	hueTime := time.Duration(cfg.SoundEnergy.HueTime * float64(time.Second))
-	var soundEnergy float64
-	var soundEnergyTimer time.Duration
+	var soundTriBandMax backgroundloops.SoundEnergyTriBand
+	soundTriBandMaxHistory := make([]backgroundloops.SoundEnergyTriBand, cfg.SoundEnergy.HistoryCount)
 
 	// Wait for the first wave display type to be selected
 	var wave drawloops.Wave
+	background := backgroundloops.GetFirstBackgroundLoop()
 	select {
 	case <-quit:
 		return
@@ -66,28 +63,45 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 
 		if dmxData.DMXOn {
 			wave = drawloops.GetWaveNum(int(dmxData.DisplayMode))
+			background = backgroundloops.GetBackgroundLoopNum(int(dmxData.BackgroundMode))
 		}
 
 		// Calculate the smoothed FFT values and the sound energy
-		soundEnergy = 0
+		soundTriBandMax.Bass, soundTriBandMax.Mid, soundTriBandMax.Treble = 0, 0, 0
+		// soundEnergy = 0
 		for i := range smoothFFT {
 			smoothFFT[i] = cfg.Display.FFTSmoothCurve*smoothFFT[i] + (1-cfg.Display.FFTSmoothCurve)*curFFT[i]
-			soundEnergy += math.Pow(smoothFFT[i], 2)
+			bandIndex := 3 * i / len(smoothFFT)
+			switch bandIndex {
+			case 0:
+				if soundTriBandMax.Bass < smoothFFT[i] {
+					soundTriBandMax.Bass = smoothFFT[i]
+				}
+			case 1:
+				if soundTriBandMax.Mid < smoothFFT[i] {
+					soundTriBandMax.Mid = smoothFFT[i]
+				}
+			case 2:
+				if soundTriBandMax.Treble < smoothFFT[i] {
+					soundTriBandMax.Treble = smoothFFT[i]
+				}
+			}
 		}
+		// fmt.Println(soundTriBandMax.Bass, soundTriBandMax.Mid, soundTriBandMax.Treble)
 
 		elapsed = time.Since(start)
 		start = time.Now()
+		soundTriBandMax.Tm = start
 
-		// Add the current sound energy to the history buffer and convert it into color
-		soundEnergy = math.Sqrt(soundEnergy)
-		copy(soundEnergyColors[1:], soundEnergyColors[0:len(soundEnergyColors)-2])
-		soundEnergyColors[0] = soundHue(&soundEnergyTimer, hueTime, elapsed, soundEnergy)
+		// Add the current sound energy to the history buffer
+		copy(soundTriBandMaxHistory[1:], soundTriBandMaxHistory[0:len(soundTriBandMaxHistory)-2])
+		soundTriBandMaxHistory[0] = soundTriBandMax
 
 		// Calculate the current state of the white dots
 		whiteDotCalc(dotsValue, dotsHangTime, dotsTimeLeft, smoothFFT, elapsed)
 
 		// Generate the current canvas to be displayed
-		wave.Draw(c, *dmxData, smoothFFT, dotsValue, soundEnergyColors)
+		wave.Draw(c, *dmxData, smoothFFT, dotsValue)
 
 		if dmxData.DMXOn {
 			overlay := ldc.GetImage()
@@ -99,6 +113,8 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 			// draw.Draw(c, overlay.Bounds(), overlay, image.Point{0, 0}, draw.Over)
 			// log.Println("Elapsed: ", time.Since(starttest))
 		}
+
+		background.Draw(c, *dmxData, soundTriBandMaxHistory)
 
 		// Call the main render of the canvas
 		c.Render()
@@ -135,76 +151,4 @@ func whiteDotCalc(dotsValue []float64, hangTime time.Duration, dotsTimeLeft []ti
 			}
 		}
 	}
-}
-
-// Based on time the sound energy values are being translated from HSV to RGB values
-func soundHue(timer *time.Duration, hueTime, elapsed time.Duration, soundEnergy float64) color.RGBA {
-	var H, S, V float64
-	if *timer += elapsed; *timer > hueTime {
-		*timer = 0
-	}
-
-	H = timer.Seconds() / hueTime.Seconds()
-	S = float64(cfg.SoundEnergy.Saturation / 100)
-	V = (soundEnergy - cfg.SoundEnergy.Min) / (cfg.SoundEnergy.Max - cfg.SoundEnergy.Min)
-
-	if V < 0 {
-		V = 0
-	} else if V > 1 {
-		V = 1
-	}
-
-	return hsv2RGB(H, S, V)
-
-}
-
-// H S V parameters are all between 0 and 1
-func hsv2RGB(H, S, V float64) color.RGBA {
-	var r, g, b float64
-	if S == 0 {
-		r = V * 255
-		g = V * 255
-		b = V * 255
-	} else {
-		h := H * 6
-		if h == 6 {
-			h = 0
-		}
-		i := math.Floor(h)
-		v1 := V * (1 - S)
-		v2 := V * (1 - S*(h-i))
-		v3 := V * (1 - S*(1-(h-i)))
-
-		if i == 0 {
-			r = V
-			g = v3
-			b = v1
-		} else if i == 1 {
-			r = v2
-			g = V
-			b = v1
-		} else if i == 2 {
-			r = v1
-			g = V
-			b = v3
-		} else if i == 3 {
-			r = v1
-			g = v2
-			b = V
-		} else if i == 4 {
-			r = v3
-			g = v1
-			b = V
-		} else {
-			r = V
-			g = v1
-			b = v2
-		}
-		// RGB results from 0 to 255
-		r = r * 255
-		g = g * 255
-		b = b * 255
-	}
-	out := color.RGBA{uint8(r), uint8(g), uint8(b), 0xff}
-	return out
 }

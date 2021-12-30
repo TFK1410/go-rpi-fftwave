@@ -8,6 +8,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/TFK1410/go-rpi-fftwave/backgroundloops"
 	"github.com/TFK1410/go-rpi-fftwave/dmx"
 	"github.com/TFK1410/go-rpi-fftwave/drawloops"
 	"github.com/TFK1410/go-rpi-fftwave/lyricsoverlay"
@@ -69,8 +70,11 @@ func main() {
 
 	// Initialize all the possible wave types
 	drawloops.InitWaves(cfg.FFT.BinCount, cfg.Display.MinVal, cfg.Display.MaxVal)
+	backgroundloops.InitBackgroundLoops(cfg.Matrix.Cols*2, cfg.Matrix.Rows*2, cfg.SoundEnergy.MinBand, cfg.SoundEnergy.MaxBand)
 
 	// Initialize the LED matrix and the canvas that goes along with it
+	// set export MATRIX_TERMINAL_EMULATOR=1 to use the terminal emulator version for testing
+	// set export SOOUND_EMULATOR=1 to add dummy sound data for testing
 	m, err := rgbmatrix.NewRGBLedMatrix(cfg.Matrix)
 	if err != nil {
 		log.Fatal(err)

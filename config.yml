@@ -77,6 +77,10 @@ soundEnergyConfig:
   min: 900
   # sound energy value required to show the color at full brightness
   max: 1750
+  # minimum sound energy value in tri band that will be shown
+  minBand: 100
+  # maximum sound energy value in tri band that will be shown
+  maxBand: 200
   # saturation of the displayed sound energy colors
   saturation: 100
   # time in seconds it takes to do a full rotation of hue colors to be displayed
