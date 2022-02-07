@@ -59,12 +59,12 @@ func (b *HistoryBackground) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, sound
 
 // This function will mirror out a single pixel draw to multiple fields as required
 func (b *HistoryBackground) drawPixels(c *rgbmatrix.Canvas, x, y int, clr color.RGBA) {
-	_, _, _, a := c.At(x, b.dataHeight+y).RGBA()
-	if a == 0 {
+	r, g, bl, a := c.At(x, b.dataHeight+y).RGBA()
+	if r == 0 && g == 0 && bl == 0 && a == 0 {
 		c.Set(x, b.dataHeight+y, clr)
 	}
-	_, _, _, a = c.At(x, b.dataHeight-1-y).RGBA()
-	if a == 0 {
+	r, g, bl, a = c.At(x, b.dataHeight-1-y).RGBA()
+	if r == 0 && g == 0 && bl == 0 && a == 0 {
 		c.Set(x, b.dataHeight-1-y, clr)
 	}
 }

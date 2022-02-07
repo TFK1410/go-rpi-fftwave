@@ -1,0 +1,149 @@
+1. Install the 64-bit version of the OS just as usual, enable ssh, upgrade the packages
+# sudo apt update && sudo apt upgrade -y
+# sudo apt install vim htop git libasound2-dev portaudio19-dev -y
+
+2. Add isolcpus=3 rcu_nocbs=3 to the cmdline.txt in /boot and reboot. Also edit the /boot/config.txt and enable the i2c_arm option by uncommenting the line:
+dtparam=i2c_arm=on
+To make sure it all works use # sudo raspi-config to enable the i2c interface
+
+3. Download the go binary for the 64 bit ARM. Example: https://go.dev/dl/go1.17.6.linux-arm64.tar.gz
+# wget https://go.dev/dl/go1.17.6.linux-arm64.tar.gz
+# sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.17.6.linux-arm64.tar.gz
+  Add go path to $HOME/.profile or /etc/profile
+  export PATH=$PATH:/usr/local/go/bin
+# source ~/.profile
+# go version
+go version go1.17.6 linux/arm64
+
+4. Modify some of the user permissions for future steps:
+# sudo usermod -a -G audio pi
+# sudo usermod -a -G audio root
+# sudo usermod -a -G gpio pi
+# sudo usermod -a -G gpio root
+# sudo usermod -a -G i2c pi
+# sudo usermod -a -G i2c root
+
+5. Create a modprobe.d file to set the usb sound card at the first index and also disable the internal audio driver and reboot:
+# cat /etc/modprobe.d/alsa-base.conf
+options snd-usb-audio index=0
+# cat <<EOF | sudo tee /etc/modprobe.d/blacklist-rgb-matrix.conf
+blacklist snd_bcm2835
+EOF
+# sudo update-initramfs -u
+
+6. Install fftw3
+# wget http://www.fftw.org/fftw-3.3.10.tar.gz
+# tar -xvf fftw-3.3.10.tar.gz
+# cd fftw-3.3.10/
+# ./configure
+# make -j
+# sudo make install
+
+7. Get the repository
+# git clone https://github.com/TFK1410/go-rpi-fftwave
+# cd go-rpi-fftwave
+# go get -u ./...
+# go get -u golang.org/x/exp
+# go get -u ./...
+...
+../go/pkg/mod/github.com/tfk1410/go-rpi-rgb-led-matrix@v0.0.0-20210404121211-ed43f29cbccb/matrix.go:6:10: fatal error: led-matrix-c.h: No such file or directory
+    6 | #include <led-matrix-c.h>
+      | 
+...
+
+8. Add the rpi-rgb-led-matrix repo
+# cd ../go/pkg/mod/github.com/tfk1410/go-rpi-rgb-led-matrix@v0.0.0-20210404121211-ed43f29cbccb/
+# chmod +w .
+# mkdir vendor && cd vendor
+# git clone https://github.com/hzeller/rpi-rgb-led-matrix.git
+# cd rpi-rgb-led-matrix/lib
+  Edit the Makefile here and make sure this option is set:
+  DEFINES+=-DRGB_SLOWDOWN_GPIO=4
+# cd ../
+# make -j
+
+9. Go back to the cloned repo and build the binary
+# cd ~/go-rpi-fftwave
+# go get -u ./...
+# go build
+# go install
+
+10. Create the systemd service file using the example below:
+# cat /usr/lib/systemd/system/go-fft-display.service
+[Unit]
+Description=FFT Display control service
+
+[Service]
+User=pi
+Type=idle
+#ExecStartPre=/bin/sleep 10
+ExecStart=sudo /home/pi/go/bin/go-rpi-fftwave -c /home/pi/config.yml
+StandardOutput=null
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+Alias=go-fft-display.service
+
+# sudo systemctl daemon-reload
+# sudo systemctl enable go-fft-display
+
+11. Create config.yml in the home directory and create a sqlite file. Example below
+# cat config.yml
+matrixConfig:
+  rows: 32
+  cols: 64
+  chain: 4
+  parallel: 1
+  pwmBits: 11
+  pwmLSBNanoseconds: 130
+  initialBrightness: 30
+  scanMode: 0
+  disableHardwarePulsing: false
+  showRefresh: false
+  inverseColors: false
+  hardwareMapping: "regular"
+  pixelMapperConfig: "U-mapper"
+sampleRate: 44100
+fftConfig:
+  chunkPower: 13
+  fftUpdateRate: 120
+  binCount: 64
+displayConfig:
+  refreshRate: 120
+  fftSmoothCurve: 0.75
+  minHz: 34
+  maxHz: 20000
+  minVal: 110
+  maxVal: 155
+whiteDotConfig:
+  hangTime: 0.5
+  dropSpeed: 40
+soundEnergyConfig:
+  historyCount: 256
+  min: 1025
+  max: 1750
+  minBand: 110
+  maxBand: 155
+  saturation: 100
+  hueTime: 10
+encoderConfig:
+  dtPin: 16
+  clkPin: 20
+  swPin: 12
+  longPressTime: 1
+dmxConfig:
+  slaveAddress: 0x04
+lyricsOverlayConfig:
+  refreshRate: 40
+  sqlitePath: "/home/pi/lyrics.sqlite"
+  
+
+  
+OTHER USEFUL COMMANDS:
+Start the binary:
+# sudo -E ./go-rpi-fftwave -c /home/pi/config.yml
+Set the variables for screen emulation:
+# export MATRIX_TERMINAL_EMULATOR=1
+# export SOUND_EMULATOR=1

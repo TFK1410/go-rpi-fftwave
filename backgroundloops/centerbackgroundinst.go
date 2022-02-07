@@ -63,8 +63,8 @@ func (cbi *CenterBackgroundInst) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, 
 
 	for y := 0; y < cbi.dataHeight; y++ {
 		for x := 0; x < cbi.dataWidth; x++ {
-			_, _, _, a := c.At(x, y).RGBA()
-			if a == 0 && cbi.radiusIndexes[x][y] < energyHeight {
+			r, g, b, a := c.At(x, y).RGBA()
+			if r == 0 && g == 0 && b == 0 && a == 0 && cbi.radiusIndexes[x][y] < energyHeight {
 				c.Set(x, y, clr)
 			}
 		}

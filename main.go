@@ -124,7 +124,7 @@ func main() {
 			switch msg {
 			case BrightnessUp:
 				// Brightness increase
-				if bright := m.GetBrightness(); bright < 100 {
+				if bright := m.GetBrightness(); bright < 70 {
 					m.SetBrightness(bright + 1)
 				}
 			case BrightnessDown:

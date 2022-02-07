@@ -60,8 +60,8 @@ func (cb *CenterBackground) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, sound
 
 	for y := 0; y < cb.dataHeight; y++ {
 		for x := 0; x < cb.dataWidth; x++ {
-			_, _, _, a := c.At(x, y).RGBA()
-			if a == 0 {
+			r, g, b, a := c.At(x, y).RGBA()
+			if r == 0 && g == 0 && b == 0 && a == 0 {
 				soundEnergy = maxTriBand(soundHistory[cb.delayIndexes[cb.radiusIndexes[x][y]-1]])
 				V = (soundEnergy - cb.min) / (cb.max - cb.min)
 
