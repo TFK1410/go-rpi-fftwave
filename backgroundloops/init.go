@@ -26,6 +26,8 @@ func InitBackgroundLoops(displayWidth int, displayHeight int, minVal, maxVal flo
 	backgroundLoops = append(backgroundLoops, &CenterBackground{})
 	backgroundLoops = append(backgroundLoops, &CenterBackgroundInst{})
 	backgroundLoops = append(backgroundLoops, &HistoryBackground{timeSpan: 1000 * time.Millisecond})
+	backgroundLoops = append(backgroundLoops, &ShiftHueBackground{})
+	backgroundLoops = append(backgroundLoops, &DesaturateBackground{})
 	backgroundLoops = append(backgroundLoops, &NoBackground{})
 
 	for i := range backgroundLoops {

@@ -46,8 +46,6 @@ type whiteDotConfig struct {
 
 type soundEnergyConfig struct {
 	HistoryCount int     `yaml:"historyCount,omitempty"`
-	Min          float64 `yaml:"min,omitempty"`
-	Max          float64 `yaml:"maxd,omitempty"`
 	MinBand      float64 `yaml:"minBand,omitempty"`
 	MaxBand      float64 `yaml:"maxBand,omitempty"`
 	Saturation   int     `yaml:"saturation,omitempty"`
@@ -121,8 +119,6 @@ var cfg Configuration = Configuration{
 	},
 	SoundEnergy: soundEnergyConfig{
 		HistoryCount: 128,
-		Min:          900,
-		Max:          1750,
 		MinBand:      100,
 		MaxBand:      200,
 		Saturation:   100,

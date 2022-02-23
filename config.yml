@@ -73,10 +73,6 @@ soundEnergyConfig:
   # the max number of energy values that are kept in a buffer
   # this should be at least the max radius of the energy ripple
   historyCount: 128
-  # minimum sound energy value that will be shown in color
-  min: 900
-  # sound energy value required to show the color at full brightness
-  max: 1750
   # minimum sound energy value in tri band that will be shown
   minBand: 100
   # maximum sound energy value in tri band that will be shown
