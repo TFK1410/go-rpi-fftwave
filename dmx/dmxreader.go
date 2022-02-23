@@ -117,3 +117,18 @@ func InitDMX(slaveAddress byte, data *DMXData, lyricsDMXInfo chan<- uint, wg *sy
 		}
 	}
 }
+
+//ResetDMX function resets the DMX values to the defaults
+func ResetDMX(data *DMXData) {
+	data.DisplayMode = 0
+	data.BackgroundMode = 0
+	data.WhiteDots = true
+	data.ColorPalette = 0
+	data.PaletteAngle = 0
+	data.PalettePhaseOffset = 0
+	data.Color.R = 0
+	data.Color.G = 0
+	data.Color.B = 0
+	data.Color.A = 0
+	data.LyricsDMXInfo = 0
+}

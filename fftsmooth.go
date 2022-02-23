@@ -13,7 +13,7 @@ import (
 	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
-func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutChan <-chan []float64, dmxData *dmx.DMXData, ldc *lyricsoverlay.LyricDrawContext, wg *sync.WaitGroup, quit <-chan struct{}) {
+func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, backgroundchan <-chan backgroundloops.BackgroundLoop, fftOutChan <-chan []float64, dmxData *dmx.DMXData, ldc *lyricsoverlay.LyricDrawContext, wg *sync.WaitGroup, quit <-chan struct{}) {
 	defer wg.Done()
 
 	// Wait for the first batch of FFT data
@@ -47,7 +47,10 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 	case <-quit:
 		return
 	case wave = <-wavechan:
+	case background = <-backgroundchan:
 	}
+
+	var dispMode, backMode int
 
 	for {
 		select {
@@ -58,12 +61,18 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 			continue
 		case wave = <-wavechan:
 			continue
+		case background = <-backgroundchan:
+			continue
 		case <-ticker:
 		}
 
-		if dmxData.DMXOn {
-			wave = drawloops.GetWaveNum(int(dmxData.DisplayMode))
-			background = backgroundloops.GetBackgroundLoopNum(int(dmxData.BackgroundMode))
+		if dispMode != int(dmxData.DisplayMode) {
+			dispMode = int(dmxData.DisplayMode)
+			wave = drawloops.GetWaveNum(dispMode)
+		}
+		if backMode != int(dmxData.DisplayMode) {
+			backMode = int(dmxData.BackgroundMode)
+			background = backgroundloops.GetBackgroundLoopNum(backMode)
 		}
 
 		// Calculate the smoothed FFT values and the sound energy
@@ -103,7 +112,7 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, fftOutCh
 		// Generate the current canvas to be displayed
 		wave.Draw(c, *dmxData, smoothFFT, dotsValue)
 
-		if dmxData.DMXOn {
+		if dmxData.LyricsDMXInfo > 0 {
 			overlay := ldc.GetImage()
 			// overlay := image.NewRGBA(image.Rect(0, 0, c.Bounds().Dx(), c.Bounds().Dy()))
 			// draw.Draw(overlay, overlay.Bounds(), &image.Uniform{color.White}, image.Point{0, 0}, draw.Src)

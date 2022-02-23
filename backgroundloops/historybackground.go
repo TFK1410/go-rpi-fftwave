@@ -37,9 +37,9 @@ func (b *HistoryBackground) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, sound
 			sI++
 		}
 		// fmt.Println(curTime.Sub(soundHistory[sI].Tm), curTime.Sub(soundHistory[sI+1].Tm), sI)
-		bassPoints := math.Round(soundHistory[sI].Bass * b.bandPoints / b.max)
-		midPoints := math.Round(soundHistory[sI].Mid * b.bandPoints / b.max)
-		treblePoints := math.Round(soundHistory[sI].Treble * b.bandPoints / b.max)
+		bassPoints := math.Round((soundHistory[sI].Bass - b.min) * b.bandPoints / (b.max - b.min))
+		midPoints := math.Round((soundHistory[sI].Mid - b.min) * b.bandPoints / (b.max - b.min))
+		treblePoints := math.Round((soundHistory[sI].Treble - b.min) * b.bandPoints / (b.max - b.min))
 
 		j := 0
 		for z := 0; z < int(treblePoints); z++ {

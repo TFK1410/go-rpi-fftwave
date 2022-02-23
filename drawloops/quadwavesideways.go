@@ -38,23 +38,21 @@ func (m *QuadWaveSideways) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, 
 
 		barHeight := getBarHeight(avg, m.dataHeight, m.minVal, m.maxVal)
 		dotsHeight := getBarHeight(avgDots, m.dataHeight, m.minVal, m.maxVal)
-		if (!dmxData.DMXOn || dmxData.WhiteDots) && barHeight > 0 && barHeight == dotsHeight {
+		if dmxData.WhiteDots && barHeight > 0 && barHeight == dotsHeight {
 			barHeight--
 		}
 		var phaseOffset int
-		if dmxData.DMXOn {
+		if dmxData.PalettePhaseOffset > 0 && dmxData.PaletteAngle > 0 {
 			phaseOffset = int(dmxData.PalettePhaseOffset) + int(float64(dmxData.PaletteAngle)/255.0*float64(m.dataHeight)*float64(x))
 		}
 
 		for y := 0; y < barHeight-1; y++ {
-			if dmxData.DMXOn {
-				if dmxData.Color.A > 0 {
-					// draw constant dmx color
-					m.drawPixels(c, x, y, dmxData.Color)
-				} else {
-					// draw dmx palette color
-					m.drawPixels(c, x, y, palette.Palettes[dmxData.ColorPalette][getPaletteOffsetWrap(int(m.paletteIndexes[y])+phaseOffset)])
-				}
+			if dmxData.Color.A > 0 {
+				// draw constant dmx color
+				m.drawPixels(c, x, y, dmxData.Color)
+			} else if phaseOffset > 0 && dmxData.ColorPalette > 0 {
+				// draw dmx palette color
+				m.drawPixels(c, x, y, palette.Palettes[dmxData.ColorPalette][getPaletteOffsetWrap(int(m.paletteIndexes[y])+phaseOffset)])
 			} else {
 				// draw default palette color
 				m.drawPixels(c, x, y, palette.Palettes[0][m.paletteIndexes[y]])
@@ -66,7 +64,7 @@ func (m *QuadWaveSideways) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, 
 			m.drawPixels(c, x, y, color.RGBA{0, 0, 0, 0})
 		}
 
-		if dotsHeight > 0 && (!dmxData.DMXOn || dmxData.WhiteDots) {
+		if dotsHeight > 0 && dmxData.WhiteDots {
 			// white dot draw
 			m.drawPixels(c, x, dotsHeight-1, color.RGBA{255, 255, 255, 255})
 		}

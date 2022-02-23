@@ -100,9 +100,11 @@ func main() {
 	// Setup FFT smoothing thread
 	var dmxData dmx.DMXData
 	waveChan := make(chan drawloops.Wave)
+	backgroundChan := make(chan backgroundloops.BackgroundLoop)
 	quits = addThread(&wg, quits)
-	go initFFTSmooth(c, waveChan, fftOutChan, &dmxData, &ldc, &wg, quits[len(quits)-1])
+	go initFFTSmooth(c, waveChan, backgroundChan, fftOutChan, &dmxData, &ldc, &wg, quits[len(quits)-1])
 	waveChan <- drawloops.GetFirstWave()
+	backgroundChan <- backgroundloops.GetFirstBackgroundLoop()
 
 	// Start encoder thread
 	encMessage := make(chan EncoderMessage)
@@ -114,6 +116,7 @@ func main() {
 	pause := make(chan struct{})
 	play := make(chan struct{})
 	go dmx.InitDMX(cfg.DMX.SlaveAddress, &dmxData, lyricsDMXInfo, &wg, quits[len(quits)-1], pause, play)
+	dmx.ResetDMX(&dmxData)
 
 	log.Println("All initialized")
 
@@ -134,16 +137,23 @@ func main() {
 				}
 			case ButtonPress:
 				// This will select the next display wave pattern
-				if !dmxData.DMXOn {
-					waveChan <- drawloops.GetNextWave()
-				}
+				// if !dmxData.DMXOn {
+				// 	waveChan <- drawloops.GetNextWave()
+				// }
 			case LongPress:
 				// This will toggle the DMX color display mode
-				if dmxData.DMXOn {
-					pause <- struct{}{}
-				} else {
-					play <- struct{}{}
-				}
+				// if dmxData.DMXOn {
+				// 	pause <- struct{}{}
+				// } else {
+				// 	play <- struct{}{}
+				// }
+				// This will reset the current DMX data
+				dmx.ResetDMX(&dmxData)
+			case UpPress:
+				waveChan <- drawloops.GetNextWave()
+			case DownPress:
+				backgroundChan <- backgroundloops.GetNextBackgroundLoop()
+
 			}
 		// Handle the quit message by forwarding the terminate signal to all goroutines
 		case <-quit:

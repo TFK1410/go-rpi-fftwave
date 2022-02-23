@@ -35,6 +35,8 @@ const (
 	BrightnessDown
 	ButtonPress
 	LongPress
+	UpPress
+	DownPress
 )
 
 func initEncoder(DTpin, CLKpin, SWpin int, pressTime float64, messages chan<- EncoderMessage, wg *sync.WaitGroup, quit <-chan struct{}) {
@@ -99,6 +101,8 @@ func initEncoder(DTpin, CLKpin, SWpin int, pressTime float64, messages chan<- En
 	log.Println("Stopping encoder thread")
 }
 
+var pressNoMove, pressed bool
+
 // Called when the button is pressed
 // debouncing should be taken care of over here
 // short press and long press send two different messages back to the main function
@@ -106,7 +110,9 @@ func callPress() {
 	currentRoSWStatus = roSWPin.Read()
 	if currentRoSWStatus == gpio.Low && lastRoSWStatus == gpio.High {
 		pressTimer = time.Now()
-	} else if currentRoSWStatus == gpio.High && lastRoSWStatus == gpio.Low {
+		pressNoMove = true
+		pressed = true
+	} else if currentRoSWStatus == gpio.High && lastRoSWStatus == gpio.Low && pressNoMove {
 		if time.Since(pressTimer) > longPressTime {
 			sendMessage(LongPress, encoderChannel)
 		} else {
@@ -127,9 +133,17 @@ func callRotate() {
 
 	if time.Since(rotateTimer) > rotateDelay {
 		if lastRoCLKStatus == gpio.High && currentRoCLKStatus == gpio.Low {
-			sendMessage(BrightnessUp, encoderChannel)
+			if pressed {
+				sendMessage(UpPress, encoderChannel)
+			} else {
+				sendMessage(BrightnessUp, encoderChannel)
+			}
 		} else if lastRoCLKStatus == gpio.Low && currentRoCLKStatus == gpio.High {
-			sendMessage(BrightnessDown, encoderChannel)
+			if pressed {
+				sendMessage(DownPress, encoderChannel)
+			} else {
+				sendMessage(BrightnessDown, encoderChannel)
+			}
 		}
 	}
 }
