@@ -118,6 +118,7 @@ func callPress() {
 		} else {
 			sendMessage(ButtonPress, encoderChannel)
 		}
+		pressed = false
 	}
 	lastRoSWStatus = currentRoSWStatus
 }

@@ -87,9 +87,9 @@ encoderConfig:
   # DTPin used for the encoder
   dtPin: 16
   # CLPin used for the encoder
-  clkPin: 20
+  clkPin: 21
   # SWPin used for the encoder
-  swPin: 12
+  swPin: 26
   # time in seconds that it takes for the long press to be triggered instead of a short press
   longPressTime: 1
 # Configuration for the DMX communication through a connected Arduino

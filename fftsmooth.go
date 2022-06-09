@@ -51,6 +51,7 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, backgrou
 	}
 
 	var dispMode, backMode int
+	// looptimes := make([]time.Duration, 1000)
 
 	for {
 		select {
@@ -74,6 +75,7 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, backgrou
 			backMode = int(dmxData.BackgroundMode)
 			background = backgroundloops.GetBackgroundLoopNum(backMode)
 		}
+		// looptime := time.Now()
 
 		// Calculate the smoothed FFT values and the sound energy
 		soundTriBandMax.Bass, soundTriBandMax.Mid, soundTriBandMax.Treble = 0, 0, 0
@@ -129,6 +131,18 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, backgrou
 		c.Render()
 
 		// fmt.Printf("Elapsed time: %v\tSound Energy: %.2f\n", elapsed, soundEnergy)
+		// copy(looptimes[1:],looptimes[:len(looptimes)-1])
+		// looptimes[0] = time.Since(looptime)
+		// var average, avgcount time.Duration
+
+		// for i := 0; i < len(looptimes); i++ {
+		//	if looptimes[i] == 0 {
+		//		break
+		//	}
+		//	average += looptimes[i]
+		//	avgcount++
+		// }
+		// fmt.Printf("Elapsed time average: %v\n", average / time.Duration(avgcount))
 	}
 }
 
