@@ -1,0 +1,125 @@
+
+(rules PCB active3-rpi-hub75-adapter
+  (snap_angle 
+    fortyfive_degree
+  )
+  (autoroute_settings
+    (fanout off)
+    (app.freerouting.autoroute on)
+    (postroute on)
+    (vias on)
+    (via_costs 50)
+    (plane_via_costs 5)
+    (start_ripup_costs 100)
+    (start_pass_no 1)
+    (layer_rule F.Cu
+      (active on)
+      (preferred_direction horizontal)
+      (preferred_direction_trace_costs 1.0)
+      (against_preferred_direction_trace_costs 2.4)
+    )
+    (layer_rule B.Cu
+      (active on)
+      (preferred_direction vertical)
+      (preferred_direction_trace_costs 1.0)
+      (against_preferred_direction_trace_costs 1.7)
+    )
+  )
+  (rule
+    (width 254.0)
+    (clear 254.2)
+    (clear 127.0 (type smd_to_turn_gap))
+    (clear 406.6 (type default_power))
+    (clear 63.6 (type smd_smd))
+    (clear 406.6 (type smd_power))
+    (clear 406.6 (type "kicad_default"_power))
+    (clear 406.6 (type power_power))
+  )
+  (padstack "Via[0-1]_889:635_um"
+    (shape
+      (circle F.Cu 889.0 0.0 0.0)
+    )
+    (shape
+      (circle B.Cu 889.0 0.0 0.0)
+    )
+    (attach off)
+  )
+  (padstack "Via[0-1]_1200:800_um"
+    (shape
+      (circle F.Cu 1200.0 0.0 0.0)
+    )
+    (shape
+      (circle B.Cu 1200.0 0.0 0.0)
+    )
+    (attach off)
+  )
+  (via 
+    "Via[0-1]_889:635_um" "Via[0-1]_889:635_um" default
+  )
+  (via 
+    "Via[0-1]_1200:800_um" "Via[0-1]_1200:800_um" default
+  )
+  (via 
+    "Via[0-1]_889:635_um-kicad_default" "Via[0-1]_889:635_um" "kicad_default"
+  )
+  (via 
+    "Via[0-1]_1200:800_um-kicad_default" "Via[0-1]_1200:800_um" "kicad_default"
+  )
+  (via 
+    "Via[0-1]_889:635_um-power" "Via[0-1]_889:635_um" power
+  )
+  (via 
+    "Via[0-1]_1200:800_um-power" "Via[0-1]_1200:800_um" power
+  )
+  (via_rule
+    default "Via[0-1]_889:635_um"
+  )
+  (via_rule
+    "kicad_default" "Via[0-1]_889:635_um-kicad_default"
+  )
+  (via_rule
+    power "Via[0-1]_1200:800_um-power"
+  )
+  (class default
+    strobe "p0_r1" "p0_g1" OE "p0_b1" "p0_r2" "p0_g2" "row_D"
+    "row_C" "p0_b2" clock "row_B" "row_A" "p1_g1" "p1_b1" "p1_r1"
+    "p1_g2" "p1_r2" "p1_b2" "p0_r1_buff" "p0_g1_buff" "p0_b1_buff" "p0_r2_buff" "p0_g2_buff"
+    "p0_b2_buff" "row_A_buff" "row_B_buff" "row_C_buff" "row_D_buff" "clock_buff_0" "strobe_buff_0" "OE_buff_0"
+    "p1_r1_buff" "p1_g1_buff" "p1_b1_buff" "p1_r2_buff" "p1_g2_buf" "p1_b2_buff" "clock_buff_1" "strobe_buff_1"
+    "OE_buff_1" "strobe_buff_2" "Net-(P1-Pad1)" "row_E" "unconnected-(P1-Pad30)" "Sel-Pin4" "Sel-Pin8" "unconnected-(P1-Pad28)"
+    "unconnected-(P1-Pad27)" 3v3 "unconnected-(P1-Pad9)" "Net-(P6-Pad1)" "unconnected-(ARD1-Pad1)" "dmx_rx" "unconnected-(ARD1-Pad3)" "unconnected-(ARD1-Pad5)"
+    "unconnected-(ARD1-Pad6)" "unconnected-(ARD1-Pad7)" "unconnected-(ARD1-Pad8)" "unconnected-(ARD1-Pad9)" "unconnected-(ARD1-Pad10)" "unconnected-(ARD1-Pad11)" "unconnected-(ARD1-Pad12)" "unconnected-(ARD1-Pad13)"
+    "unconnected-(ARD1-Pad14)" "unconnected-(ARD1-Pad15)" "unconnected-(ARD1-Pad16)" "unconnected-(ARD1-Pad17)" "unconnected-(ARD1-Pad18)" "unconnected-(ARD1-Pad19)" "unconnected-(ARD1-Pad20)" "unconnected-(ARD1-Pad21)"
+    "unconnected-(ARD1-Pad22)" "i2c1_sda" "i2c1_scl" "unconnected-(ARD1-Pad25)" "unconnected-(ARD1-Pad26)" "unconnected-(ARD1-Pad27)" "unconnected-(ARD1-Pad28)" "enc_sw"
+    "enc_dt" "enc_clk" "unconnected-(P1-Pad8)"
+    (clearance_class default)
+    (via_rule default)
+    (rule
+      (width 254.0)
+    )
+    (circuit 
+      (use_layer F.Cu B.Cu)
+    )
+  )
+  (class "kicad_default"
+    (clearance_class "kicad_default")
+    (via_rule kicad_default)
+    (rule
+      (width 254.0)
+    )
+    (circuit 
+      (use_layer F.Cu B.Cu)
+    )
+  )
+  (class power
+    VCC GND
+    (clearance_class power)
+    (via_rule power)
+    (rule
+      (width 406.4)
+    )
+    (circuit 
+      (use_layer F.Cu B.Cu)
+    )
+  )
+)
