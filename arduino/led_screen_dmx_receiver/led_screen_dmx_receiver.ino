@@ -2,7 +2,22 @@
 #include <DMXSerial.h>
 
 #define SLAVE_ADDRESS 0x04
-char dmxs[8];
+#define DMX_COUNT 12
+char dmxs[DMX_COUNT+1];
+
+// chan 0 : new dmx update
+// chan 1 : display mode with inverse MSB for white dots (0 - on, 1 - off)
+// chan 2 : color palette, if 0 then solid color
+// chan 3 : palette angle, 0-360 mapped to 0-255
+// chan 4 : palette offset
+// chan 5 : solid color R
+// chan 6 : solid color G
+// chan 7 : solid color B
+// chan 8 : solid color brightness
+// chan 9 : lyric ID most significant byte
+// chan 10: lyric ID cont
+// chan 11: lyric ID least significant byte
+// chan 12: lyric display progress 0-255
 
 void setup()
 {
@@ -23,19 +38,9 @@ void requestEvent() {
   }
   else
     dmxs[0] = 0;
-  //LSB Measure
-  dmxs[1] = DMXSerial.read(1);
-  //MSB Measure
-  dmxs[2] = DMXSerial.read(2);
-  //LSB Track ID
-  dmxs[3] = DMXSerial.read(3);
-  //MSB Track ID
-  dmxs[4] = DMXSerial.read(4);
-  //Color R
-  dmxs[5] = DMXSerial.read(5);
-  //Color G
-  dmxs[6] = DMXSerial.read(6);
-  //Color B
-  dmxs[7] = DMXSerial.read(7);
-  Wire.write(dmxs, 8);
+
+  for (int i = 0; i < DMX_COUNT; i++) {
+    dmxs[i+1] = DMXSerial.read(i+1);
+  }
+  Wire.write(dmxs, DMX_COUNT+1);
 }
