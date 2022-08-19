@@ -12,7 +12,6 @@ import (
 
 //DMXData is a struct containing all the data received via DMX
 type DMXData struct {
-	DMXOn              bool
 	DisplayMode        byte
 	BackgroundMode     byte
 	WhiteDots          bool
@@ -36,13 +35,11 @@ func InitDMX(slaveAddress byte, data *DMXData, lyricsDMXInfo chan<- uint, wg *sy
 	dev := i2c.Dev{Bus: bus, Addr: uint16(slaveAddress)}
 	bytes := make([]byte, 13)
 
-	data.DMXOn = false
 	data.WhiteDots = true
 
 	// Wait for the first signal to start the goroutine
 	select {
 	case <-play:
-		data.DMXOn = true
 	case <-quit:
 		// Close the goroutine letting the defers trigger
 		log.Println("Stopping dmx reader thread")
@@ -99,16 +96,14 @@ func InitDMX(slaveAddress byte, data *DMXData, lyricsDMXInfo chan<- uint, wg *sy
 
 		// Enable pausing of the reader goroutine
 		select {
-		case <-pause:
-			data.DMXOn = false
-			select {
-			case <-play:
-				data.DMXOn = true
-			case <-quit:
-				// Close the goroutine letting the defers trigger
-				log.Println("Stopping dmx reader thread")
-				return
-			}
+		// case <-pause:
+		// 	select {
+		// 	case <-play:
+		// 	case <-quit:
+		// 		// Close the goroutine letting the defers trigger
+		// 		log.Println("Stopping dmx reader thread")
+		// 		return
+		// 	}
 		case <-quit:
 			// Close the goroutine letting the defers trigger
 			log.Println("Stopping dmx reader thread")

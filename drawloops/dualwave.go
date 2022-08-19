@@ -32,13 +32,16 @@ func (m *DualWave) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots []f
 		if dmxData.WhiteDots && barHeight > 0 && barHeight == dotsHeight {
 			barHeight--
 		}
-		phaseOffset := int(dmxData.PalettePhaseOffset) + int(float64(dmxData.PaletteAngle)/255.0*float64(m.dataHeight)*float64(x))
+		var phaseOffset int
+		if dmxData.PalettePhaseOffset > 0 && dmxData.PaletteAngle > 0 {
+			phaseOffset = int(dmxData.PalettePhaseOffset) + int(float64(dmxData.PaletteAngle)/255.0*float64(m.dataHeight)*float64(x))
+		}
 
 		for y := 0; y < barHeight-1; y++ {
 			if dmxData.Color.A > 0 {
 				// draw constant dmx color
 				m.drawPixels(c, x, y, dmxData.Color)
-			} else if phaseOffset > 0 && dmxData.ColorPalette > 0 {
+			} else if dmxData.ColorPalette > 0 {
 				// draw dmx palette color
 				m.drawPixels(c, x, y, palette.Palettes[dmxData.ColorPalette][getPaletteOffsetWrap(int(m.paletteIndexes[y])+phaseOffset)])
 			} else {

@@ -41,7 +41,7 @@ func (m *QuadWave) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots []f
 			if dmxData.Color.A > 0 {
 				// draw constant dmx color
 				m.drawPixels(c, x, y, dmxData.Color)
-			} else if phaseOffset > 0 && dmxData.ColorPalette > 0 {
+			} else if dmxData.ColorPalette > 0 {
 				// draw dmx palette color
 				m.drawPixels(c, x, y, palette.Palettes[dmxData.ColorPalette][getPaletteOffsetWrap(int(m.paletteIndexes[y])+phaseOffset)])
 			} else {

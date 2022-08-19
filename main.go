@@ -117,6 +117,7 @@ func main() {
 	play := make(chan struct{})
 	go dmx.InitDMX(cfg.DMX.SlaveAddress, &dmxData, lyricsDMXInfo, &wg, quits[len(quits)-1], pause, play)
 	dmx.ResetDMX(&dmxData)
+	play <- struct{}{}
 
 	log.Println("All initialized")
 

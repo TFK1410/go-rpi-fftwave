@@ -23,12 +23,12 @@ var backgroundLoops []BackgroundLoop
 
 // InitBackgroundLoops creates the BackgroundLoop types array and initializes every one of them
 func InitBackgroundLoops(displayWidth int, displayHeight int, minVal, maxVal float64) {
+	backgroundLoops = append(backgroundLoops, &NoBackground{})
 	backgroundLoops = append(backgroundLoops, &CenterBackground{})
 	backgroundLoops = append(backgroundLoops, &CenterBackgroundInst{})
 	backgroundLoops = append(backgroundLoops, &HistoryBackground{timeSpan: 1000 * time.Millisecond})
 	backgroundLoops = append(backgroundLoops, &ShiftHueBackground{})
 	backgroundLoops = append(backgroundLoops, &DesaturateBackground{})
-	backgroundLoops = append(backgroundLoops, &NoBackground{})
 
 	for i := range backgroundLoops {
 		backgroundLoops[i].InitBackgroundLoop(displayWidth, displayHeight, minVal, maxVal)
