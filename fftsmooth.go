@@ -114,6 +114,9 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, backgrou
 		// Generate the current canvas to be displayed
 		wave.Draw(c, *dmxData, smoothFFT, dotsValue)
 
+		// Generate the current background canvas to be displayed
+		background.Draw(c, *dmxData, soundTriBandMaxHistory)
+
 		if dmxData.LyricsDMXInfo > 0 {
 			overlay := ldc.GetImage()
 			// overlay := image.NewRGBA(image.Rect(0, 0, c.Bounds().Dx(), c.Bounds().Dy()))
@@ -124,9 +127,6 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, backgrou
 			// draw.Draw(c, overlay.Bounds(), overlay, image.Point{0, 0}, draw.Over)
 			// log.Println("Elapsed: ", time.Since(starttest))
 		}
-
-		background.Draw(c, *dmxData, soundTriBandMaxHistory)
-
 		// Call the main render of the canvas
 		c.Render()
 
