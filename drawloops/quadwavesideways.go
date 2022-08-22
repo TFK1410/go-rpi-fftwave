@@ -46,7 +46,7 @@ func (m *QuadWaveSideways) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, 
 			phaseOffset = int(dmxData.PalettePhaseOffset) + int(float64(dmxData.PaletteAngle)/255.0*float64(m.dataHeight)*float64(x))
 		}
 
-		for y := 0; y < barHeight-1; y++ {
+		for y := 0; y < barHeight; y++ {
 			if dmxData.Color.A > 0 {
 				// draw constant dmx color
 				m.drawPixels(c, x, y, dmxData.Color)

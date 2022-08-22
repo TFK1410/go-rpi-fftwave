@@ -37,7 +37,7 @@ func (m *DualWave) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots []f
 			phaseOffset = int(dmxData.PalettePhaseOffset) + int(float64(dmxData.PaletteAngle)/255.0*float64(m.dataHeight)*float64(x))
 		}
 
-		for y := 0; y < barHeight-1; y++ {
+		for y := 0; y < barHeight; y++ {
 			if dmxData.Color.A > 0 {
 				// draw constant dmx color
 				m.drawPixels(c, x, y, dmxData.Color)
@@ -51,7 +51,7 @@ func (m *DualWave) Draw(c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots []f
 		}
 
 		for y := barHeight; y < m.dataHeight; y++ {
-			// sound energy color draw
+			// blackout the rest
 			m.drawPixels(c, x, y, color.RGBA{0, 0, 0, 0})
 		}
 
