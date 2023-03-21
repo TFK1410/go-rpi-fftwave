@@ -74,7 +74,7 @@ func main() {
 
 	// Initialize the LED matrix and the canvas that goes along with it
 	// set export MATRIX_TERMINAL_EMULATOR=1 to use the terminal emulator version for testing
-	// set export SOOUND_EMULATOR=1 to add dummy sound data for testing
+	// set export SOUND_EMULATOR=1 to add dummy sound data for testing
 	m, err := rgbmatrix.NewRGBLedMatrix(cfg.Matrix)
 	if err != nil {
 		log.Fatal(err)

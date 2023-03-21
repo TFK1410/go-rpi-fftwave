@@ -47,22 +47,28 @@ func maxFromRange(start, end int, slc []float64) float64 {
 // CalculateBands function returns a slice of frequency bands which will then be used to translate
 // linear frequency space to a logarithmic one.
 func calculateBands(minHz, maxHz float64, width int) []float64 {
-	return logspace(math.Log10(minHz), math.Log10(maxHz), width+1)
+	bands := logspace(math.Log10(minHz), math.Log10(maxHz), width+1)
+	bands[0] = minHz
+	bands[len(bands)-1] = maxHz
+	return bands
 }
 
 // CalculateBins function translates linear range of frequency to appropriate fourier transform bin ranges
 // in logarithmic space
-func calculateBins(minHz, maxHz float64, width, sampleRate, chunkSize int) []int {
+func calculateBins(minHz, maxHz float64, width, sampleRate, chunkSize int) ([]int, []float64) {
 	freqBands := calculateBands(minHz, maxHz, width)
 
 	fftBins := make([]int, width+1)
+	fftBinFloating := make([]float64, width+1)
 	for i := range fftBins {
 		fftBins[i] = int(math.Round(float64(chunkSize) * freqBands[i] / float64(sampleRate)))
+		fftBinFloating[i] = float64(chunkSize) * freqBands[i] / float64(sampleRate)
 		if fftBins[i] < 1 {
 			fftBins[i] = 1
 		} else if fftBins[i] > chunkSize {
 			fftBins[i] = chunkSize
 		}
 	}
-	return fftBins
+
+	return fftBins, fftBinFloating
 }

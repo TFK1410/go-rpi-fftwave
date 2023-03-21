@@ -28,7 +28,7 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 	defer plan.Free()
 
 	// Calculate the logarithmic bins
-	fftBins := calculateBins(cfg.Display.MinHz, cfg.Display.MaxHz, cfg.FFT.BinCount, cfg.SampleRate, 1<<cfg.FFT.ChunkPower)
+	fftBins, fftBinFloating := calculateBins(cfg.Display.MinHz, cfg.Display.MaxHz, cfg.FFT.BinCount, cfg.SampleRate, 1<<cfg.FFT.ChunkPower)
 
 	outFFT := make([]float64, cfg.FFT.BinCount)
 
@@ -72,7 +72,7 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 		}
 
 		// Convert the linear data to logarithmic space
-		fftToBins(fftBins, realData, outFFT)
+		fftToBins(fftBins, fftBinFloating, realData, outFFT)
 
 		// Send the new data to the smoothing goroutine without blocking
 		select {
@@ -87,13 +87,14 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 
 // fftToBins translates the result of Fourier transform which is in linear bins
 // to bins in logarithmic space
-func fftToBins(fftBins []int, data, out []float64) {
+func fftToBins(fftBins []int, fftBinFloating []float64, data, out []float64) {
 	var maxFromBins, logFromMax float64
 	for i := 0; i < len(out); i++ {
-		if fftBins[i] != fftBins[i+1] {
-			maxFromBins = maxFromRange(fftBins[i], fftBins[i+1], data)
+		if fftBins[i+1]-fftBins[i] <= 1 {
+			lbin, lfrac := math.Modf(fftBinFloating[i])
+			maxFromBins = math.Abs(data[int(lbin)]*(1-lfrac) + data[int(lbin)+1]*lfrac)
 		} else {
-			maxFromBins = math.Abs((data[fftBins[i]] + data[fftBins[i+1]]) / 2)
+			maxFromBins = maxFromRange(fftBins[i], fftBins[i+1], data)
 		}
 
 		if maxFromBins > 0 {
