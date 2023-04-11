@@ -1,7 +1,12 @@
 package drawloops
 
 import (
+	"image/color"
 	"math"
+
+	"github.com/TFK1410/go-rpi-fftwave/dmx"
+	"github.com/TFK1410/go-rpi-fftwave/palette"
+	rgbmatrix "github.com/tfk1410/go-rpi-rgb-led-matrix"
 )
 
 // Linspace function returns a slice of n values which are linearly spread out between a and b.
@@ -115,5 +120,59 @@ func getPaletteOffsetWrap(offset int) byte {
 		return byteCutoff
 	} else {
 		return 255 - byteCutoff
+	}
+}
+
+func commonDraw(m Wave, c *rgbmatrix.Canvas, dmxData dmx.DMXData, data, dots []float64) {
+	var maxvalue, maxdot float64
+	dataWidth, dataHeight := m.GetDataSize()
+	minVal, maxVal := m.GetValueRange()
+	paletteIndexes := m.GetPaletteIndexes()
+
+	xprev := 0
+	for x := 0; x < dataWidth; x++ {
+		xnext := (x + 1) * len(data) / dataWidth
+		maxvalue = data[xprev]
+		maxdot = dots[xprev]
+		// for xindex := xprev; xindex < xnext; xindex++ {
+		// 	if maxvalue < data[xindex] {
+		// 		maxvalue = data[xindex]
+		// 		maxdot = dots[xindex]
+		// 	}
+		// }
+		xprev = xnext
+
+		barHeight := getBarHeight(maxvalue, dataHeight, minVal, maxVal)
+		dotsHeight := getBarHeight(maxdot, dataHeight, minVal, maxVal)
+		if dmxData.WhiteDots && barHeight > 0 && barHeight == dotsHeight {
+			barHeight--
+		}
+		var phaseOffset int
+		if dmxData.PalettePhaseOffset > 0 && dmxData.PaletteAngle > 0 {
+			phaseOffset = int(dmxData.PalettePhaseOffset) + int(float64(dmxData.PaletteAngle)/255.0*float64(dataHeight)*float64(x))
+		}
+
+		for y := 0; y < barHeight; y++ {
+			if dmxData.Color.A > 0 {
+				// draw constant dmx color
+				m.DrawPixels(c, x, y, dmxData.Color)
+			} else if dmxData.ColorPalette > 0 {
+				// draw dmx palette color
+				m.DrawPixels(c, x, y, palette.Palettes[dmxData.ColorPalette][getPaletteOffsetWrap(int(paletteIndexes[y])+phaseOffset)])
+			} else {
+				// draw default palette color
+				m.DrawPixels(c, x, y, palette.Palettes[0][paletteIndexes[y]])
+			}
+		}
+
+		for y := barHeight; y < dataHeight; y++ {
+			// blackout the rest
+			m.DrawPixels(c, x, y, color.RGBA{0, 0, 0, 0})
+		}
+
+		if dotsHeight > 0 && dmxData.WhiteDots {
+			// white dot draw
+			m.DrawPixels(c, x, dotsHeight-1, color.RGBA{255, 255, 255, 255})
+		}
 	}
 }

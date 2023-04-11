@@ -65,6 +65,15 @@ $ cat /etc/modprobe.d/alsa-base.conf
 options snd-usb-audio index=0
 ```
 
+Disable HDMI audio on RPi4 as well for good measure
+```sh
+$ cat /boot/config.txt
+...
+#dtoverlay=vc4-kms-v3d
+dtoverlay=vc4-kms-v3d,noaudio
+...
+```
+
 Also if you are at it it might be worth it to add your user to the gpio group as well. This would be used for the rotary encoder. No message will show up if this is causing some issues without being added to the group. The encoder just will not register.
 ```sh
 sudo usermod -a -G gpio pi

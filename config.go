@@ -27,7 +27,7 @@ type matrixConfig struct {
 type fftConfig struct {
 	ChunkPower    int `yaml:"chunkPower,omitempty"`
 	FFTUpdateRate int `yaml:"fftUpdateRate,omitempty"`
-	BinCount      int `yaml:"binCount,omitempty"`
+	// BinCount      int `yaml:"binCount,omitempty"`
 }
 
 type displayConfig struct {
@@ -103,7 +103,7 @@ var cfg Configuration = Configuration{
 	FFT: fftConfig{
 		ChunkPower:    13,
 		FFTUpdateRate: 100,
-		BinCount:      64,
+		// BinCount:      64,
 	},
 	Display: displayConfig{
 		RefreshRate:    120,

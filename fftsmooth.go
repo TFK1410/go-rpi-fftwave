@@ -28,11 +28,11 @@ func initFFTSmooth(c *rgbmatrix.Canvas, wavechan <-chan drawloops.Wave, backgrou
 	ticker := time.Tick(time.Second / time.Duration(cfg.Display.RefreshRate))
 
 	// Create the buffer for the smoothed out FFT data to be displayed
-	smoothFFT := make([]float64, cfg.FFT.BinCount)
+	smoothFFT := make([]float64, c.Bounds().Dx())
 
 	// Setup the white dot buffers and timers
-	dotsValue := make([]float64, cfg.FFT.BinCount)
-	dotsTimeLeft := make([]time.Duration, cfg.FFT.BinCount)
+	dotsValue := make([]float64, c.Bounds().Dx())
+	dotsTimeLeft := make([]time.Duration, c.Bounds().Dx())
 	dotsHangTime := time.Duration(cfg.WhiteDot.HangTime * float64(time.Second))
 	var start time.Time
 	var elapsed time.Duration

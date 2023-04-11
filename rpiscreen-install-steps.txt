@@ -31,6 +31,13 @@ blacklist snd_bcm2835
 EOF
 # sudo update-initramfs -u
 
+Disable HDMI audio (on RPi4):
+# cat /boot/config.txt
+...
+#dtoverlay=vc4-kms-v3d
+dtoverlay=vc4-kms-v3d,noaudio
+...
+
 6. Install fftw3
 # wget http://www.fftw.org/fftw-3.3.10.tar.gz
 # tar -xvf fftw-3.3.10.tar.gz

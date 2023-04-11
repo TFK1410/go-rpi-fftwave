@@ -15,9 +15,9 @@ const SoundEmulatorENV = "SOUND_EMULATOR"
 // initFFT function is a start for the goroutine handling the FFT part of the application.
 // bfz is the number of elements in a single FFT call.
 // Should be the same as the ring buffer size.
-func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
+func initFFT(bfz, binCount int, fftOutChan chan<- []float64, ss SoundSync) error {
 	defer ss.wg.Done()
-	//  start := time.Now()
+	// start := time.Now()
 
 	// Generate a plan for FFTW
 	var r *soundbuffer.SoundBuffer
@@ -28,9 +28,9 @@ func initFFT(bfz int, fftOutChan chan<- []float64, ss SoundSync) error {
 	defer plan.Free()
 
 	// Calculate the logarithmic bins
-	fftBins, fftBinFloating := calculateBins(cfg.Display.MinHz, cfg.Display.MaxHz, cfg.FFT.BinCount, cfg.SampleRate, 1<<cfg.FFT.ChunkPower)
+	fftBins, fftBinFloating := calculateBins(cfg.Display.MinHz, cfg.Display.MaxHz, binCount, cfg.SampleRate, 1<<cfg.FFT.ChunkPower)
 
-	outFFT := make([]float64, cfg.FFT.BinCount)
+	outFFT := make([]float64, binCount)
 
 	freq := 10
 

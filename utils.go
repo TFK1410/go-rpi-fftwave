@@ -70,5 +70,8 @@ func calculateBins(minHz, maxHz float64, width, sampleRate, chunkSize int) ([]in
 		}
 	}
 
+	// fmt.Println(fftBins)
+	// fmt.Println(fftBinFloating)
+
 	return fftBins, fftBinFloating
 }

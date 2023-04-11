@@ -62,16 +62,6 @@ func main() {
 	ss.quit = quits[len(quits)-1]
 	go initRecord(r, cfg.SampleRate/cfg.FFT.FFTUpdateRate, ss)
 
-	// Setup FFT thread
-	quits = addThread(&wg, quits)
-	ss.quit = quits[len(quits)-1]
-	fftOutChan := make(chan []float64)
-	go initFFT(1<<cfg.FFT.ChunkPower, fftOutChan, ss)
-
-	// Initialize all the possible wave types
-	drawloops.InitWaves(cfg.FFT.BinCount, cfg.Display.MinVal, cfg.Display.MaxVal)
-	backgroundloops.InitBackgroundLoops(cfg.Matrix.Cols*2, cfg.Matrix.Rows*2, cfg.SoundEnergy.MinBand, cfg.SoundEnergy.MaxBand)
-
 	// Initialize the LED matrix and the canvas that goes along with it
 	// set export MATRIX_TERMINAL_EMULATOR=1 to use the terminal emulator version for testing
 	// set export SOUND_EMULATOR=1 to add dummy sound data for testing
@@ -84,6 +74,16 @@ func main() {
 	defer c.Close()
 
 	log.Println("Canvas size:", c.Bounds().Dx(), "x", c.Bounds().Dy())
+
+	// Setup FFT thread
+	quits = addThread(&wg, quits)
+	ss.quit = quits[len(quits)-1]
+	fftOutChan := make(chan []float64)
+	go initFFT(1<<cfg.FFT.ChunkPower, c.Bounds().Dx(), fftOutChan, ss)
+
+	// Initialize all the possible wave types
+	drawloops.InitWaves(c.Bounds().Dx(), c.Bounds().Dy(), cfg.Display.MinVal, cfg.Display.MaxVal)
+	backgroundloops.InitBackgroundLoops(c.Bounds().Dx(), c.Bounds().Dy(), cfg.SoundEnergy.MinBand, cfg.SoundEnergy.MaxBand)
 
 	// Setup lyrics thread
 	lyricsDMXInfo := make(chan uint)

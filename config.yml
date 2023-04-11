@@ -42,7 +42,7 @@ fftConfig:
   # number of times per second that the current FFT values are calculcated
   fftUpdateRate: 100
   # number of output data width in the logarithmic space
-  binCount: 64
+  # binCount: 64
 # Configuration for the way the waves are displayed
 displayConfig:
   # number of times the display gets refreshed (this will only be the target value)
